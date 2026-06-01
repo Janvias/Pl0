@@ -1,9 +1,9 @@
 ========================================
 PL/0 Compiler Cache File
-Generated: 10:08:06 Jun  1 2026
+Generated: 10:30:25 Jun  1 2026
 ========================================
 
-[GLOBAL_VARIABLES]
+[COMPILER_STATE]
 token_count=28
 quad_count=6
 temp_count=2
@@ -15,10 +15,12 @@ semantic_error=0
 Format: name|kind|value|level|address|quad_index
 
 --- Scope Level 0 ---
-a|CONST|10|0|0|0
-b|CONST|20|0|0|0
-x|VAR|0|0|0|0
-y|VAR|0|0|1|0
+
+--- Scope Level 1 (main) ---
+a|CONST|10|1|0|0
+b|CONST|20|1|0|0
+x|VAR|0|1|0|0
+y|VAR|0|1|1|0
 
 [QUADRUPLES]
 Format: address|op|arg1|arg2|result
