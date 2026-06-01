@@ -79,6 +79,9 @@ int main(int argc, char *argv[]) {
     /* Print lexical analysis results */
     print_tokens(&state);
     print_statistics(&state);
+    print_classification_table(&state);
+    print_state_transition_diagram();
+    print_recognition_flowchart();
     
     printf("\nLexical analysis completed. Total tokens: %d\n", state.token_count);
     

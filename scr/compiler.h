@@ -192,6 +192,25 @@ void print_tokens(CompilerState* state);
  */
 void print_statistics(CompilerState* state);
 
+/**
+ * @brief Print word classification table
+ * @param state Compiler state
+ * @description Shows detailed classification of all tokens with line numbers
+ */
+void print_classification_table(CompilerState* state);
+
+/**
+ * @brief Print state transition diagram (text-based)
+ * @description Shows the finite state machine for lexical analysis
+ */
+void print_state_transition_diagram();
+
+/**
+ * @brief Print lexical recognition flowchart (text-based)
+ * @description Shows the flow of token recognition process
+ */
+void print_recognition_flowchart();
+
 /*============================================================================
  * Function Declarations - Syntax/Semantic Analysis (parser.c)
  *============================================================================*/

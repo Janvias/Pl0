@@ -375,8 +375,7 @@ void print_tokens(CompilerState* state) {
         }
     }
 }
-
-/**
+ 
  * @brief Print token statistics summary
  * @param state Compiler state
  * @details Shows counts for each token category and total
@@ -404,4 +403,124 @@ void print_statistics(CompilerState* state) {
     printf("operator: %d\n", count_op);
     printf("delimiter: %d\n", count_del);
     printf("total: %d\n", count_key + count_id + count_num + count_op + count_del);
+}
+
+/*============================================================================
+ * Visualization Functions
+ *============================================================================*/
+
+/**
+ * @brief Print word classification table
+ * @param state Compiler state
+ * @details Shows detailed classification of all tokens with line numbers
+ */
+void print_classification_table(CompilerState* state) {
+    printf("\n===== WORD CLASSIFICATION TABLE =====\n");
+    printf("%-6s %-12s %-15s %-6s\n", "Index", "Type", "Value", "Line");
+    printf("------ ------------ --------------- ------\n");
+    
+    for (int i = 0; i < state->token_count; i++) {
+        Token t = state->token_list[i];
+        const char* type_str;
+        switch (t.type) {
+            case KEYWORD:    type_str = "KEYWORD";    break;
+            case IDENTIFIER: type_str = "IDENTIFIER"; break;
+            case NUMBER:     type_str = "NUMBER";     break;
+            case OPERATOR:   type_str = "OPERATOR";   break;
+            case DELIMITER:  type_str = "DELIMITER";  break;
+            default:         type_str = "ERROR";      break;
+        }
+        printf("%-6d %-12s %-15s %-6d\n", i, type_str, t.value, t.line);
+    }
+}
+
+/**
+ * @brief Print state transition diagram (text-based)
+ * @details Shows the finite state machine for lexical analysis
+ */
+void print_state_transition_diagram() {
+    printf("\n===== STATE TRANSITION DIAGRAM =====\n");
+    printf("Finite State Machine for PL/0 Lexical Analysis\n");
+    printf("================================================\n\n");
+    
+    printf("States:\n");
+    printf("  S0: Start state\n");
+    printf("  S1: Identifier/Keyword (letter)\n");
+    printf("  S2: Number (digit)\n");
+    printf("  S3: Operator (+, -, *, /, =, #, <, >)\n");
+    printf("  S4: Delimiter (;, ,, ., (, ), :)\n");
+    printf("  S5: Two-char operator (<=, >=, :=)\n");
+    printf("  S6: Comment (// or /*)\n");
+    printf("  SF: Final state (token recognized)\n\n");
+    
+    printf("Transition Table:\n");
+    printf("+-------+--------+--------+--------+--------+--------+--------+--------+\n");
+    printf("| State | letter | digit  | op_char| del_char|  :     |  /     |  EOF   |\n");
+    printf("+-------+--------+--------+--------+--------+--------+--------+--------+\n");
+    printf("|   S0  |  S1    |  S2    |  S3    |  S4    |  S4    |  S3    |  SF    |\n");
+    printf("|   S1  |  S1    |  S1    |  SF    |  SF    |  SF    |  SF    |  SF    |\n");
+    printf("|   S2  |  ERROR |  S2    |  SF    |  SF    |  SF    |  SF    |  SF    |\n");
+    printf("|   S3  |  SF    |  SF    |  SF    |  SF    |  S5    |  S6    |  SF    |\n");
+    printf("|   S4  |  SF    |  SF    |  SF    |  SF    |  S5    |  SF    |  SF    |\n");
+    printf("|   S5  |  SF    |  SF    |  SF    |  SF    |  SF    |  SF    |  SF    |\n");
+    printf("|   S6  |  S6    |  S6    |  S6    |  S6    |  S6    |  S6*   |  ERROR |\n");
+    printf("+-------+--------+--------+--------+--------+--------+--------+--------+\n");
+    printf("Note: S6* transitions to SF when closing */ is found\n");
+}
+
+/**
+ * @brief Print lexical recognition flowchart (text-based)
+ * @details Shows the flow of token recognition process
+ */
+void print_recognition_flowchart() {
+    printf("\n===== LEXICAL RECOGNITION FLOWCHART =====\n");
+    printf("Token Recognition Process Flow\n");
+    printf("===============================\n\n");
+    
+    printf("                          Start\n");
+    printf("                            |\n");
+    printf("                            v\n");
+    printf("                  Read next character\n");
+    printf("                            |\n");
+    printf("                            v\n");
+    printf("              +------------+------------+\n");
+    printf("              |                         |\n");
+    printf("              v                         v\n");
+    printf("         [Whitespace?]              [EOF?]\n");
+    printf("              |                         |\n");
+    printf("         Yes  |  No              Yes  |  No\n");
+    printf("              v  v                     v\n");
+    printf("         Skip char              +------+------+\n");
+    printf("              |                 |             |\n");
+    printf("              +------+          v             v\n");
+    printf("                     |    [Letter?]      [Digit?]\n");
+    printf("                     |       |             |\n");
+    printf("                     |  Yes  |  No    Yes  |  No\n");
+    printf("                     |       v  v          v\n");
+    printf("                     |  Identifier    Number\n");
+    printf("                     |       |             |\n");
+    printf("                     |       v             v\n");
+    printf("                     |  [Keyword?]      +---+---+\n");
+    printf("                     |       |           |       |\n");
+    printf("                     |  Yes  |  No   [Valid?]  [Valid?]\n");
+    printf("                     |       v  v       | Yes   | No\n");
+    printf("                     |  Keyword  ID   +--+--+  +--+--+\n");
+    printf("                     |                 |     |  |     |\n");
+    printf("                     +--------+--------+     |  |     |\n");
+    printf("                              |              |  |     |\n");
+    printf("                              v              v  v     v\n");
+    printf("                         +---+---+       Valid  ERROR\n");
+    printf("                         |       |       Num    Num\n");
+    printf("                         v       v\n");
+    printf("                    [Operator?]  [Delimiter?]\n");
+    printf("                         |       |\n");
+    printf("                    Yes  |  No   v\n");
+    printf("                         v  v  Process\n");
+    printf("                    Process  ERROR\n");
+    printf("                         |\n");
+    printf("                         v\n");
+    printf("                      Output Token\n");
+    printf("                         |\n");
+    printf("                         v\n");
+    printf("                       Repeat\n");
 }
