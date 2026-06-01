@@ -1,0 +1,13 @@
+/* Test 6: Comments
+   This test covers: single-line and multi-line comments */
+
+const PI = 3, radius = 5, area = 0;
+
+procedure calculateArea;
+    begin
+        area := radius * radius * PI
+    end;
+
+begin
+    call calculateArea
+end.

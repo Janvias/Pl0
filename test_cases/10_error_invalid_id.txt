@@ -1,0 +1,8 @@
+// Test 10: Error Test - Invalid Identifier (starts with number)
+// This program should report: Invalid word
+
+var 123abc;
+
+begin
+    abc := 10
+end.

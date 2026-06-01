@@ -1,0 +1,8 @@
+// Test 8: Error Test - Undeclared Variable
+// This program should report: Undeclared variable
+
+const value = 50;
+
+begin
+    x := value + 10
+end.

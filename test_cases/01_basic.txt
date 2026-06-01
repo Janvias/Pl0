@@ -1,0 +1,11 @@
+// Test 1: Basic Declarations and Expressions
+// This test covers: const, var declarations and basic arithmetic
+
+const a = 10, b = 20;
+
+var x, y;
+
+begin
+    x := a + b;
+    y := x - 5
+end.

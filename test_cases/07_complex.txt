@@ -1,0 +1,30 @@
+// Test 7: Complex Program with All Features
+// This test covers: all PL/0 features combined
+
+const MAX = 100, MIN = 1;
+var counter, total, temp;
+
+procedure computeSum;
+    var i;
+    begin
+        i := 0;
+        total := 0;
+        while i < counter do
+            begin
+                total := total + i;
+                i := i + 1
+            end
+    end;
+
+procedure computeAverage;
+    begin
+        if counter > 0 then
+            temp := total / counter
+    end;
+
+begin
+    counter := 10;
+    call computeSum;
+    call computeAverage;
+    write(total)
+end.

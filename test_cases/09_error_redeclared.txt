@@ -1,0 +1,9 @@
+// Test 9: Error Test - Redeclared Identifier
+// This program should report: Redeclared variable
+
+const x = 10;
+var x;
+
+begin
+    x := 5
+end.
