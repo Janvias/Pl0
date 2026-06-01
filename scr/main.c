@@ -10,8 +10,8 @@
  *              5. Outputs results to console and file
  * 
  * @author PL/0 Compiler Project
- * @date 2026-05-30
- * @version 1.0
+ * @date 2026-06-01
+ * @version 1.1
  */
 
 #include "compiler.h"
@@ -38,14 +38,8 @@ int token_count = 0;
 /** @brief Current token index being processed by parser */
 int current_token = 0;
 
-/** @brief Symbol table storing all declared identifiers */
-Symbol symbol_table[MAX_SYMBOLS];
-
-/** @brief Total count of symbols in symbol table */
-int symbol_count = 0;
-
-/** @brief Current nesting level (scope depth) */
-int current_level = 0;
+/** @brief Symbol table (using linked list implementation) */
+SymbolTable* symbol_table = NULL;
 
 /** @brief List of generated quadruples */
 Quad quad_list[MAX_QUADS];
@@ -97,9 +91,17 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     
+    /* Initialize symbol table */
+    symbol_table = symtable_create();
+    if (symbol_table == NULL) {
+        printf("Error: Cannot create symbol table\n");
+        fclose(fp_in);
+        return 1;
+    }
+    
     /* Print compilation header */
     printf("========================================\n");
-    printf("       PL/0 Compiler v1.0\n");
+    printf("       PL/0 Compiler v1.1\n");
     printf("========================================\n");
     printf("Source file: %s\n\n", argv[1]);
     
@@ -180,6 +182,7 @@ int main(int argc, char *argv[]) {
     FILE *fp_out = fopen(output_filename, "w");
     if (fp_out == NULL) {
         printf("Error: Cannot create output file '%s'\n", output_filename);
+        symtable_destroy(symbol_table);
         fclose(fp_in);
         return 1;
     }
@@ -192,8 +195,35 @@ int main(int argc, char *argv[]) {
     printf("Quadruples written to: %s\n", output_filename);
     
     /*------------------------------------------------------------------------
+     * Phase 5: Write Cache File
+     *------------------------------------------------------------------------*/
+    printf("\n========================================\n");
+    printf("Phase 5: Writing cache file...\n");
+    
+    /* Create cache filename based on input filename */
+    char cache_filename[256];
+    if (dot_pos != NULL) {
+        /* Replace extension with _cache.txt */
+        int base_len = dot_pos - argv[1];
+        strncpy(cache_filename, argv[1], base_len);
+        cache_filename[base_len] = '\0';
+        strcat(cache_filename, "_cache.txt");
+    } else {
+        /* Append _cache.txt if no extension */
+        strcpy(cache_filename, argv[1]);
+        strcat(cache_filename, "_cache.txt");
+    }
+    
+    /* Write global variables to cache file */
+    write_global_variables_to_cache(cache_filename);
+    
+    /*------------------------------------------------------------------------
      * Cleanup and Exit
      *------------------------------------------------------------------------*/
+    /* Destroy symbol table */
+    symtable_destroy(symbol_table);
+    
+    /* Close input file */
     fclose(fp_in);
     
     printf("\n========================================\n");

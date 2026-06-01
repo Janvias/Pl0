@@ -6,56 +6,11 @@
  *              Uses recursive descent parsing technique.
  * 
  * @author PL/0 Compiler Project
- * @date 2026-05-30
- * @version 1.0
+ * @date 2026-06-01
+ * @version 1.1
  */
 
 #include "compiler.h"
-
-/*============================================================================
- * Symbol Table Management Functions
- *============================================================================*/
-
-/**
- * @brief Look up a symbol in the symbol table
- * @param name The symbol name to search for
- * @return Index of the symbol if found, -1 if not found
- * @details Searches from most recent to oldest to handle scope correctly
- */
-int lookup_symbol(char *name) {
-    /* Search backwards to find most recent declaration first */
-    for (int i = symbol_count - 1; i >= 0; i--) {
-        if (strcmp(symbol_table[i].name, name) == 0) {
-            return i;
-        }
-    }
-    return -1;  /* Symbol not found */
-}
-
-/**
- * @brief Add a new symbol to the symbol table
- * @param name Symbol name
- * @param kind Symbol kind (CONST_KIND, VAR_KIND, or PROCEDURE_KIND)
- * @param val Value for constants (0 for variables and procedures)
- * @details Checks for redeclaration errors before adding
- */
-void add_symbol(char *name, SymbolKind kind, int val) {
-    /* Check for redeclaration in current scope */
-    if (lookup_symbol(name) >= 0) {
-        printf("(Semantic Error, Line: %d) Redeclared: %s\n", 
-               current_t().line, name);
-        semantic_error = 1;
-        return;
-    }
-    
-    /* Add symbol to table */
-    strcpy(symbol_table[symbol_count].name, name);
-    symbol_table[symbol_count].kind = kind;
-    symbol_table[symbol_count].val = val;
-    symbol_table[symbol_count].level = current_level;
-    symbol_table[symbol_count].address = symbol_count;
-    symbol_count++;
-}
 
 /*============================================================================
  * Intermediate Code Generation Functions
@@ -105,8 +60,8 @@ void factor(char *result) {
     /* Case 1: Identifier */
     if (t.type == IDENTIFIER) {
         /* Check if identifier is declared */
-        int idx = lookup_symbol(t.value);
-        if (idx < 0) {
+        Symbol* sym = symtable_lookup(symbol_table, t.value);
+        if (!sym) {
             printf("(Semantic Error, Line: %d) Undeclared: %s\n", 
                    t.line, t.value);
             semantic_error = 1;
@@ -316,12 +271,12 @@ void statement() {
         strcpy(name, t.value);
         
         /* Check if declared and not a procedure */
-        int idx = lookup_symbol(name);
-        if (idx < 0) {
+        Symbol* sym = symtable_lookup(symbol_table, name);
+        if (!sym) {
             printf("(Semantic Error, Line: %d) Undeclared: %s\n", 
                    t.line, name);
             semantic_error = 1;
-        } else if (symbol_table[idx].kind == PROCEDURE_KIND) {
+        } else if (sym->kind == PROCEDURE_KIND) {
             printf("(Semantic Error, Line: %d) Procedure used as variable: %s\n", 
                    t.line, name);
             semantic_error = 1;
@@ -413,12 +368,12 @@ void statement() {
             strcpy(name, current_t().value);
             
             /* Check if declared as procedure */
-            int idx = lookup_symbol(name);
-            if (idx < 0) {
+            Symbol* sym = symtable_lookup(symbol_table, name);
+            if (!sym) {
                 printf("(Semantic Error, Line: %d) Undeclared procedure: %s\n", 
                        current_t().line, name);
                 semantic_error = 1;
-            } else if (symbol_table[idx].kind != PROCEDURE_KIND) {
+            } else if (sym->kind != PROCEDURE_KIND) {
                 printf("(Semantic Error, Line: %d) Not a procedure: %s\n", 
                        current_t().line, name);
                 semantic_error = 1;
@@ -447,8 +402,8 @@ void statement() {
             strcpy(name, current_t().value);
             
             /* Check if declared */
-            int idx = lookup_symbol(name);
-            if (idx < 0) {
+            Symbol* sym = symtable_lookup(symbol_table, name);
+            if (!sym) {
                 printf("(Semantic Error, Line: %d) Undeclared: %s\n", 
                        current_t().line, name);
                 semantic_error = 1;
@@ -464,8 +419,8 @@ void statement() {
                 
                 if (current_t().type == IDENTIFIER) {
                     strcpy(name, current_t().value);
-                    idx = lookup_symbol(name);
-                    if (idx < 0) {
+                    sym = symtable_lookup(symbol_table, name);
+                    if (!sym) {
                         printf("(Semantic Error, Line: %d) Undeclared: %s\n", 
                                current_t().line, name);
                         semantic_error = 1;
@@ -541,7 +496,11 @@ void const_declaration() {
                 /* Get constant value */
                 if (current_t().type == NUMBER) {
                     int val = atoi(current_t().value);
-                    add_symbol(name, CONST_KIND, val);
+                    if (!symtable_insert(symbol_table, name, CONST_KIND, val, 0, 0)) {
+                        printf("(Semantic Error, Line: %d) Redeclared: %s\n", 
+                               current_t().line, name);
+                        semantic_error = 1;
+                    }
                     next_token_func();
                 }
                 
@@ -572,7 +531,13 @@ void var_declaration() {
         /* Parse variable names */
         while (1) {
             if (current_t().type == IDENTIFIER) {
-                add_symbol(current_t().value, VAR_KIND, 0);
+                int addr = symtable_get_next_address(symbol_table);
+                if (!symtable_insert(symbol_table, current_t().value, VAR_KIND, 0, addr, 0)) {
+                    printf("(Semantic Error, Line: %d) Redeclared: %s\n", 
+                           current_t().line, current_t().value);
+                    semantic_error = 1;
+                }
+                symtable_increment_address(symbol_table);
                 next_token_func();
                 
                 /* Check for more variables */
@@ -602,16 +567,20 @@ void procedure_declaration() {
         
         if (current_t().type == IDENTIFIER) {
             /* Add procedure to symbol table */
-            add_symbol(current_t().value, PROCEDURE_KIND, 0);
+            if (!symtable_insert(symbol_table, current_t().value, PROCEDURE_KIND, 0, 0, quad_count)) {
+                printf("(Semantic Error, Line: %d) Redeclared: %s\n", 
+                       current_t().line, current_t().value);
+                semantic_error = 1;
+            }
             next_token_func();
         }
         
         match(DELIMITER, ";");
         
         /* Increase nesting level for procedure body */
-        current_level++;
+        symtable_enter_scope(symbol_table, current_t().value);
         block();
-        current_level--;
+        symtable_exit_scope(symbol_table);
         
         match(DELIMITER, ";");
     }
@@ -683,21 +652,128 @@ void print_quad_to_file(FILE *fp) {
 
 /**
  * @brief Print symbol table to console
- * @details Shows name, kind, value, and level for each symbol
+ * @details Shows name, kind, value, level, and address for each symbol
  */
 void print_symbol_table() {
-    printf("\n===== SYMBOL TABLE =====\n");
-    printf("Name\tType\tValue\tLevel\n");
-    
-    for (int i = 0; i < symbol_count; i++) {
-        Symbol s = symbol_table[i];
-        char *kind;
-        
-        /* Convert kind enum to string */
-        if (s.kind == CONST_KIND) kind = "const";
-        else if (s.kind == VAR_KIND) kind = "var";
-        else kind = "procedure";
-        
-        printf("%s\t%s\t%d\t%d\n", s.name, kind, s.val, s.level);
+    symtable_dump(symbol_table);
+}
+
+/**
+ * @brief Write global variables to cache file
+ * @param filename Output cache filename
+ * @return true if successful, false otherwise
+ * @details Format:
+ *          [GLOBAL_VARIABLES]
+ *          name=value
+ *          ...
+ *          [SYMBOL_TABLE]
+ *          name|kind|value|level|address
+ *          ...
+ *          [COMPILER_STATE]
+ *          token_count=X
+ *          quad_count=Y
+ *          temp_count=Z
+ *          syntax_error=0/1
+ *          semantic_error=0/1
+ */
+bool write_global_variables_to_cache(const char* filename) {
+    FILE* fp = fopen(filename, "w");
+    if (fp == NULL) {
+        printf("Error: Cannot create cache file '%s'\n", filename);
+        return false;
     }
+    
+    /* Write header */
+    fprintf(fp, "========================================\n");
+    fprintf(fp, "PL/0 Compiler Cache File\n");
+    fprintf(fp, "Generated: %s", __TIME__);
+    fprintf(fp, " %s\n", __DATE__);
+    fprintf(fp, "========================================\n\n");
+    
+    /* Write global variables section */
+    fprintf(fp, "[GLOBAL_VARIABLES]\n");
+    fprintf(fp, "token_count=%d\n", token_count);
+    fprintf(fp, "quad_count=%d\n", quad_count);
+    fprintf(fp, "temp_count=%d\n", temp_count);
+    fprintf(fp, "next_instr=%d\n", next_instr);
+    fprintf(fp, "syntax_error=%d\n", syntax_error);
+    fprintf(fp, "semantic_error=%d\n", semantic_error);
+    
+    /* Write symbol table section */
+    fprintf(fp, "\n[SYMBOL_TABLE]\n");
+    fprintf(fp, "Format: name|kind|value|level|address|quad_index\n");
+    
+    List* scopes = symbol_table->scopes;
+    if (scopes != NULL) {
+        for (int i = 0; i < list_size(scopes); i++) {
+            Scope* scope = (Scope*)list_get(scopes, i);
+            if (scope != NULL && scope->symbols != NULL) {
+                fprintf(fp, "\n--- Scope Level %d", scope->level);
+                if (strlen(scope->procedure_name) > 0) {
+                    fprintf(fp, " (%s)", scope->procedure_name);
+                }
+                fprintf(fp, " ---\n");
+                
+                for (int j = 0; j < list_size(scope->symbols); j++) {
+                    Symbol* sym = (Symbol*)list_get(scope->symbols, j);
+                    if (sym != NULL) {
+                        const char* kind_str;
+                        switch (sym->kind) {
+                            case CONST_KIND: kind_str = "CONST"; break;
+                            case VAR_KIND: kind_str = "VAR"; break;
+                            case PROCEDURE_KIND: kind_str = "PROCEDURE"; break;
+                            default: kind_str = "UNKNOWN";
+                        }
+                        fprintf(fp, "%s|%s|%d|%d|%d|%d\n",
+                                sym->name,
+                                kind_str,
+                                sym->val,
+                                sym->level,
+                                sym->address,
+                                sym->quad_index);
+                    }
+                }
+            }
+        }
+    }
+    
+    /* Write quadruples section */
+    fprintf(fp, "\n[QUADRUPLES]\n");
+    fprintf(fp, "Format: address|op|arg1|arg2|result\n");
+    for (int i = 0; i < quad_count; i++) {
+        Quad q = quad_list[i];
+        fprintf(fp, "%d|%s|%s|%s|%s\n",
+                100 + i,
+                q.op,
+                q.arg1,
+                q.arg2,
+                q.result);
+    }
+    
+    /* Write tokens section */
+    fprintf(fp, "\n[TOKENS]\n");
+    fprintf(fp, "Format: index|type|value|line\n");
+    for (int i = 0; i < token_count; i++) {
+        Token t = token_list[i];
+        const char* type_str;
+        switch (t.type) {
+            case KEYWORD: type_str = "KEYWORD"; break;
+            case IDENTIFIER: type_str = "IDENTIFIER"; break;
+            case NUMBER: type_str = "NUMBER"; break;
+            case OPERATOR: type_str = "OPERATOR"; break;
+            case DELIMITER: type_str = "DELIMITER"; break;
+            case ERROR: type_str = "ERROR"; break;
+            default: type_str = "UNKNOWN";
+        }
+        fprintf(fp, "%d|%s|%s|%d\n", i, type_str, t.value, t.line);
+    }
+    
+    /* Write footer */
+    fprintf(fp, "\n========================================\n");
+    fprintf(fp, "End of Cache File\n");
+    fprintf(fp, "========================================\n");
+    
+    fclose(fp);
+    printf("Cache file written to: %s\n", filename);
+    return true;
 }

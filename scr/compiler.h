@@ -6,8 +6,8 @@
  *              PL/0 compiler project.
  * 
  * @author PL/0 Compiler Project
- * @date 2026-05-30
- * @version 1.0
+ * @date 2026-06-01
+ * @version 1.1
  */
 
 #ifndef COMPILER_H
@@ -31,9 +31,6 @@
 /** Maximum number of quadruples in intermediate code */
 #define MAX_QUADS 1000
 
-/** Maximum number of symbols in symbol table */
-#define MAX_SYMBOLS 100
-
 /*============================================================================
  * Type Definitions
  *============================================================================*/
@@ -52,16 +49,6 @@ typedef enum {
 } TokenType;
 
 /**
- * @enum SymbolKind
- * @brief Enumeration of symbol kinds in the symbol table
- */
-typedef enum {
-    CONST_KIND,      /**< Constant declaration */
-    VAR_KIND,        /**< Variable declaration */
-    PROCEDURE_KIND   /**< Procedure declaration */
-} SymbolKind;
-
-/**
  * @struct Token
  * @brief Represents a lexical token with its type, value, and source line
  */
@@ -70,18 +57,6 @@ typedef struct {
     char value[MAX_TOKEN_LEN];    /**< String value of the token */
     int line;                     /**< Source line number where token appears */
 } Token;
-
-/**
- * @struct Symbol
- * @brief Represents an entry in the symbol table
- */
-typedef struct {
-    char name[MAX_TOKEN_LEN];     /**< Name of the symbol */
-    SymbolKind kind;              /**< Kind of symbol (const, var, procedure) */
-    int val;                      /**< Value (for constants) */
-    int level;                    /**< Nesting level (scope depth) */
-    int address;                  /**< Address offset in memory */
-} Symbol;
 
 /**
  * @struct Quad
@@ -94,6 +69,12 @@ typedef struct {
     char arg2[MAX_TOKEN_LEN];     /**< Second argument */
     char result[MAX_TOKEN_LEN];   /**< Result destination */
 } Quad;
+
+/*============================================================================
+ * Symbol Table Include (after basic types are defined)
+ *============================================================================*/
+
+#include "symtable/symtable.h"
 
 /*============================================================================
  * Global Variables (External Declarations)
@@ -117,14 +98,8 @@ extern int token_count;
 /** Current token index during parsing */
 extern int current_token;
 
-/** Symbol table array */
-extern Symbol symbol_table[MAX_SYMBOLS];
-
-/** Total count of symbols in table */
-extern int symbol_count;
-
-/** Current nesting level (scope depth) */
-extern int current_level;
+/** Symbol table (using linked list implementation) */
+extern SymbolTable* symbol_table;
 
 /** Array of generated quadruples */
 extern Quad quad_list[MAX_QUADS];
@@ -227,21 +202,6 @@ void print_statistics();
  *============================================================================*/
 
 /**
- * @brief Look up a symbol in the symbol table
- * @param name Symbol name to search
- * @return Index if found, -1 if not found
- */
-int lookup_symbol(char *name);
-
-/**
- * @brief Add a new symbol to the symbol table
- * @param name Symbol name
- * @param kind Symbol kind (CONST_KIND, VAR_KIND, PROCEDURE_KIND)
- * @param val Value for constants
- */
-void add_symbol(char *name, SymbolKind kind, int val);
-
-/**
  * @brief Generate a new temporary variable name
  * @param temp Buffer to store generated name (T1, T2, etc.)
  */
@@ -332,5 +292,12 @@ void print_quad_to_file(FILE *fp);
  * @brief Print symbol table to console
  */
 void print_symbol_table();
+
+/**
+ * @brief Write global variables to cache file
+ * @param filename Output cache filename
+ * @return true if successful, false otherwise
+ */
+bool write_global_variables_to_cache(const char* filename);
 
 #endif /* COMPILER_H */

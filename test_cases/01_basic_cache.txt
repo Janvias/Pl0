@@ -1,0 +1,65 @@
+========================================
+PL/0 Compiler Cache File
+Generated: 10:08:06 Jun  1 2026
+========================================
+
+[GLOBAL_VARIABLES]
+token_count=28
+quad_count=6
+temp_count=2
+next_instr=106
+syntax_error=0
+semantic_error=0
+
+[SYMBOL_TABLE]
+Format: name|kind|value|level|address|quad_index
+
+--- Scope Level 0 ---
+a|CONST|10|0|0|0
+b|CONST|20|0|0|0
+x|VAR|0|0|0|0
+y|VAR|0|0|1|0
+
+[QUADRUPLES]
+Format: address|op|arg1|arg2|result
+100|syss|||
+101|+|a|b|T1
+102|:=|T1||x
+103|-|x|5|T2
+104|:=|T2||y
+105|sysc|||
+
+[TOKENS]
+Format: index|type|value|line
+0|KEYWORD|const|4
+1|IDENTIFIER|a|4
+2|OPERATOR|=|4
+3|NUMBER|10|4
+4|DELIMITER|,|4
+5|IDENTIFIER|b|4
+6|OPERATOR|=|4
+7|NUMBER|20|4
+8|DELIMITER|;|4
+9|KEYWORD|var|5
+10|IDENTIFIER|x|6
+11|DELIMITER|,|6
+12|IDENTIFIER|y|6
+13|DELIMITER|;|6
+14|KEYWORD|begin|7
+15|IDENTIFIER|x|9
+16|OPERATOR|:=|9
+17|IDENTIFIER|a|9
+18|OPERATOR|+|9
+19|IDENTIFIER|b|9
+20|DELIMITER|;|9
+21|IDENTIFIER|y|10
+22|OPERATOR|:=|10
+23|IDENTIFIER|x|10
+24|OPERATOR|-|10
+25|NUMBER|5|10
+26|KEYWORD|end|11
+27|DELIMITER|.|11
+
+========================================
+End of Cache File
+========================================
