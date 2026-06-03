@@ -1,0 +1,67 @@
+PS C:\Users\j1978\Desktop\Pl0>  & 'c:\Users\j1978\.vscode\extensions\ms-vscode.cpptools-1.32.2-win32-x64\debugAdapters\bin\WindowsDebugLauncher.exe' '--stdin=Microsoft-MIEngine-In-tawuix3j.2xs' '--stdout=Microsoft-MIEngine-Out-1byyi5ob.ypd' '--stderr=Microsoft-MIEngine-Error-s3ciguab.amf' '--pid=Microsoft-MIEngine-Pid-gwgtna1i.uiv' '--dbgExe=C:\Program Files\mingw64\bin\gdb.exe' '--interpreter=mi' 
+==================== PL/0 自动机构造测试 ====================
+
+【标识符】
+原正则：([a-zA-Z][a-zA-Z0-9]*)
+PS C:\Users\j1978\Desktop\Pl0> ^C
+PS C:\Users\j1978\Desktop\Pl0> 
+PS C:\Users\j1978\Desktop\Pl0>  & 'c:\Users\j1978\.vscode\extensions\ms-vscode.cpptools-1.32.2-win32-x64\debugAdapters\bin\WindowsDebugLauncher.exe' '--stdin=Microsoft-MIEngine-In-kecqb4vo.jxo' '--stdout=Microsoft-MIEngine-Out-ie1hksut.5ft' '--stderr=Microsoft-MIEngine-Error-fzjarbaf.ly0' '--pid=Microsoft-MIEngine-Pid-tbvzouuv.kz4' '--dbgExe=C:\Program Files\mingw64\bin\gdb.exe' '--interpreter=mi' 
+==================== PL/0 自动机构造测试 ====================
+空转移符号：ASCII 0x01 (SOH控制字符，无可见字符)
+
+【标识符】
+后缀表达式生成成功
+NFA 状态数：454
+DFA 状态数：115
+最小化 DFA 状态数：2
+✅ 测试通过
+
+【无符号整数】
+后缀表达式生成成功
+NFA 状态数：40
+DFA 状态数：11
+最小化 DFA 状态数：2
+✅ 测试通过
+
+【关键字集合】
+后缀表达式生成成功
+NFA 状态数：132
+DFA 状态数：53
+最小化 DFA 状态数：34
+✅ 测试通过
+
+【双字符运算符】
+后缀表达式生成成功
+NFA 状态数：2
+DFA 状态数：1
+最小化 DFA 状态数：1
+✅ 测试通过
+
+【单字符运算符】
+后缀表达式生成成功
+NFA 状态数：2
+DFA 状态数：1
+最小化 DFA 状态数：1
+✅ 测试通过
+
+【常量定义】
+后缀表达式生成成功
+NFA 状态数：494
+DFA 状态数：11
+最小化 DFA 状态数：2
+✅ 测试通过
+
+【变量说明】
+后缀表达式生成成功
+NFA 状态数：916
+DFA 状态数：180
+最小化 DFA 状态数：5
+✅ 测试通过
+
+【算术表达式】
+后缀表达式生成成功
+NFA 状态数：5658
+PS C:\Users\j1978\Desktop\Pl0> 
+
+
+

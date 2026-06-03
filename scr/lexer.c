@@ -3,6 +3,7 @@
  * @brief PL/0 Lexical Analyzer Implementation
  * @description This file implements the lexical analysis phase of the PL/0 compiler.
  *              It reads source code and converts it into a stream of tokens.
+ *              Integrated with DFA-based regex matching for token validation.
  * 
  * @author PL/0 Compiler Project
  * @date 2026-06-01
@@ -10,15 +11,12 @@
  */
 
 #include "compiler.h"
+#include "pl0RegexDfa/dfa_wrapper.h"
 
 /*============================================================================
  * Private Data - Keyword Table
  *============================================================================*/
 
-/**
- * @brief Array of PL/0 reserved keywords
- * @description These keywords have special meaning and cannot be used as identifiers
- */
 char *keyword[] = {
     "const",      /**< Constant declaration keyword */
     "var",        /**< Variable declaration keyword */
@@ -37,14 +35,16 @@ char *keyword[] = {
 };
 
 /*============================================================================
+ * DFA Instances for Token Validation
+ *============================================================================*/
+
+static void* dfa_ident = NULL;
+static void* dfa_number = NULL;
+
+/*============================================================================
  * Character Handling Functions
  *============================================================================*/
 
-/**
- * @brief Read next character from input file
- * @param state Compiler state
- * @details Updates state->ch and increments line counter on newline
- */
 void get_char(CompilerState* state) {
     state->ch = fgetc(state->fp_in);
     if (state->ch == '\n') {
@@ -52,22 +52,12 @@ void get_char(CompilerState* state) {
     }
 }
 
-/**
- * @brief Skip whitespace characters (spaces, tabs, newlines)
- * @param state Compiler state
- * @details Continues reading until a non-whitespace character or EOF is found
- */
 void skip_white(CompilerState* state) {
     while (state->ch != EOF && isspace(state->ch)) {
         get_char(state);
     }
 }
 
-/**
- * @brief Check if a string matches a PL/0 keyword
- * @param s The string to check
- * @return 1 if the string is a keyword, 0 otherwise
- */
 int is_keyword(char *s) {
     int i = 0;
     while (keyword[i] != NULL) {
@@ -80,48 +70,53 @@ int is_keyword(char *s) {
 }
 
 /*============================================================================
+ * DFA Initialization and Cleanup
+ *============================================================================*/
+
+void init_dfa() {
+    dfa_ident = create_dfa_from_regex("[a-zA-Z][a-zA-Z0-9]*");
+    dfa_number = create_dfa_from_regex("[0-9]+");
+}
+
+void destroy_dfa_instances() {
+    if (dfa_ident) {
+        destroy_dfa(dfa_ident);
+        dfa_ident = NULL;
+    }
+    if (dfa_number) {
+        destroy_dfa(dfa_number);
+        dfa_number = NULL;
+    }
+}
+
+/*============================================================================
  * Comment Handling Functions
  *============================================================================*/
 
-/**
- * @brief Skip single-line comment starting with double slash
- * @param state Compiler state
- * @details Reads until newline or EOF, then continues to next line
- */
 void skip_single_comment(CompilerState* state) {
-    /* Read until end of line */
     while (state->ch != EOF && state->ch != '\n') {
         get_char(state);
     }
-    /* Skip the newline character */
     if (state->ch == '\n') {
         get_char(state);
     }
 }
 
-/**
- * @brief Skip multi-line comment delimited by slash-star
- * @param state Compiler state
- * @details Handles nested content within comment block
- * @note Reports error if comment is not properly closed
- */
 void skip_multi_comment(CompilerState* state) {
-    get_char(state);  /* Skip the initial star character */
+    get_char(state);
     
-    /* Search for closing star-slash sequence */
     while (state->ch != EOF) {
         if (state->ch == '*') {
             get_char(state);
             if (state->ch == '/') {
-                get_char(state);  /* Skip the closing slash */
-                return;      /* Comment successfully closed */
+                get_char(state);
+                return;
             }
         } else {
             get_char(state);
         }
     }
     
-    /* Error: comment not closed before EOF */
     printf("(Lexical Error, Line: %d) Unclosed multi-line comment\n", state->line);
 }
 
@@ -129,30 +124,18 @@ void skip_multi_comment(CompilerState* state) {
  * Token Recognition Functions
  *============================================================================*/
 
-/**
- * @brief Get the next token from source file
- * @param state Compiler state
- * @details Recognizes identifiers, keywords, numbers, operators, and delimiters
- * @return Token structure containing type, value, and line number
- */
 Token get_token(CompilerState* state) {
     Token t;
     char token_str[MAX_TOKEN_LEN];
     int i = 0;
     
-    /* Initialize token structure */
     memset(token_str, 0, MAX_TOKEN_LEN);
     memset(&t, 0, sizeof(Token));
     t.line = state->line;
     
-    /* Skip leading whitespace */
     skip_white(state);
     
-    /*------------------------------------------------------------------------
-     * Identifier or Keyword Recognition
-     *------------------------------------------------------------------------*/
     if (isalpha(state->ch)) {
-        /* Read alphanumeric characters */
         token_str[i++] = state->ch;
         get_char(state);
         while (isalnum(state->ch) && i < MAX_TOKEN_LEN - 1) {
@@ -160,12 +143,15 @@ Token get_token(CompilerState* state) {
             get_char(state);
         }
         
-        /* Check if it's a keyword or identifier */
         if (is_keyword(token_str)) {
             t.type = KEYWORD;
         } else {
-            /* Check identifier length constraint (max 8 characters) */
-            if (i > 8) {
+            int dfa_result = dfa_accepts(dfa_ident, token_str);
+            if (!dfa_result) {
+                printf("(Lexical Error, Line: %d) Invalid identifier format: %s\n", 
+                       t.line, token_str);
+                t.type = ERROR;
+            } else if (i > 8) {
                 printf("(Lexical Error, Line: %d) Identifier too long: %s\n", 
                        t.line, token_str);
                 t.type = ERROR;
@@ -177,11 +163,7 @@ Token get_token(CompilerState* state) {
         return t;
     }
     
-    /*------------------------------------------------------------------------
-     * Number Recognition
-     *------------------------------------------------------------------------*/
     else if (isdigit(state->ch)) {
-        /* Read digits */
         token_str[i++] = state->ch;
         get_char(state);
         while (isdigit(state->ch) && i < MAX_TOKEN_LEN - 1) {
@@ -189,9 +171,7 @@ Token get_token(CompilerState* state) {
             get_char(state);
         }
         
-        /* Check for invalid identifier starting with digit */
         if (isalpha(state->ch)) {
-            /* Read remaining alphanumeric characters */
             while (isalnum(state->ch) && i < MAX_TOKEN_LEN - 1) {
                 token_str[i++] = state->ch;
                 get_char(state);
@@ -203,8 +183,12 @@ Token get_token(CompilerState* state) {
             return t;
         }
         
-        /* Check number length constraint (max 8 digits) */
-        if (i > 8) {
+        int dfa_result = dfa_accepts(dfa_number, token_str);
+        if (!dfa_result) {
+            printf("(Lexical Error, Line: %d) Invalid number format: %s\n", 
+                   t.line, token_str);
+            t.type = ERROR;
+        } else if (i > 8) {
             printf("(Lexical Error, Line: %d) Number too long: %s\n", 
                    t.line, token_str);
             t.type = ERROR;
@@ -215,31 +199,25 @@ Token get_token(CompilerState* state) {
         return t;
     }
     
-    /*------------------------------------------------------------------------
-     * Operator Recognition
-     *------------------------------------------------------------------------*/
     else if (state->ch == '+' || state->ch == '-' || state->ch == '*' || state->ch == '/' ||
              state->ch == '=' || state->ch == '#' || state->ch == '<' || state->ch == '>') {
         token_str[i++] = state->ch;
         char c1 = state->ch;
         get_char(state);
         
-        /* Check for two-character operators: <=, >= */
         if ((c1 == '<' && state->ch == '=') || (c1 == '>' && state->ch == '=')) {
             token_str[i++] = state->ch;
             get_char(state);
         }
         
-        /* Check for single-line comment: double slash */
         if (c1 == '/' && state->ch == '/') {
             skip_single_comment(state);
-            return get_token(state);  /* Get next token after comment */
+            return get_token(state);
         }
         
-        /* Check for multi-line comment: slash-star */
         if (c1 == '/' && state->ch == '*') {
             skip_multi_comment(state);
-            return get_token(state);  /* Get next token after comment */
+            return get_token(state);
         }
         
         t.type = OPERATOR;
@@ -247,20 +225,16 @@ Token get_token(CompilerState* state) {
         return t;
     }
     
-    /*------------------------------------------------------------------------
-     * Delimiter Recognition
-     *------------------------------------------------------------------------*/
     else if (state->ch == ';' || state->ch == ',' || state->ch == '.' || state->ch == '(' || 
              state->ch == ')' || state->ch == ':') {
         token_str[i++] = state->ch;
         char c1 = state->ch;
         get_char(state);
         
-        /* Check for assignment operator: := */
         if (c1 == ':' && state->ch == '=') {
             token_str[i++] = state->ch;
             get_char(state);
-            t.type = OPERATOR;  /* := is treated as operator */
+            t.type = OPERATOR;
         } else {
             t.type = DELIMITER;
         }
@@ -268,18 +242,12 @@ Token get_token(CompilerState* state) {
         return t;
     }
     
-    /*------------------------------------------------------------------------
-     * End of File
-     *------------------------------------------------------------------------*/
     else if (state->ch == EOF) {
         t.type = ERROR;
         strcpy(t.value, "EOF");
         return t;
     }
     
-    /*------------------------------------------------------------------------
-     * Invalid Character
-     *------------------------------------------------------------------------*/
     else {
         token_str[i++] = state->ch;
         printf("(Lexical Error, Line: %d) Invalid character: %c\n", 
@@ -295,48 +263,33 @@ Token get_token(CompilerState* state) {
  * Lexical Analysis Driver Function
  *============================================================================*/
 
-/**
- * @brief Perform complete lexical analysis on source file
- * @param state Compiler state
- * @details Reads entire source file and populates token_list array
- * @note Stops when EOF token is encountered
- */
 void lexical_analysis(CompilerState* state) {
+    init_dfa();
+    
     Token t;
     while (1) {
         t = get_token(state);
-        /* Stop when EOF is reached */
         if (t.type == ERROR && strcmp(t.value, "EOF") == 0) {
             break;
         }
         state->token_list[state->token_count++] = t;
     }
+    
+    destroy_dfa_instances();
 }
 
 /*============================================================================
  * Token Access Functions
  *============================================================================*/
 
-/**
- * @brief Get current token from token list
- * @param state Compiler state
- * @return Token at current_token index
- */
 Token current_t(CompilerState* state) {
     return state->token_list[state->current_token];
 }
 
-/**
- * @brief Match current token against expected type and value
- * @param state Compiler state
- * @param type Expected token type
- * @param value Expected token value string
- * @details If match succeeds, advances to next token; otherwise reports error
- */
 void match(CompilerState* state, TokenType type, const char *value) {
     Token t = current_t(state);
     if (t.type == type && strcmp(t.value, value) == 0) {
-        state->current_token++;  /* Advance to next token */
+        state->current_token++;
     } else {
         printf("(Syntax Error, Line: %d) Expected '%s', got '%s'\n", 
                t.line, value, t.value);
@@ -344,10 +297,6 @@ void match(CompilerState* state, TokenType type, const char *value) {
     }
 }
 
-/**
- * @brief Advance to next token in token list
- * @param state Compiler state
- */
 void next_token_func(CompilerState* state) {
     state->current_token++;
 }
@@ -356,11 +305,6 @@ void next_token_func(CompilerState* state) {
  * Output Functions
  *============================================================================*/
 
-/**
- * @brief Print all tokens to console in standard format
- * @param state Compiler state
- * @details Format: (type,value) for each token
- */
 void print_tokens(CompilerState* state) {
     printf("\n===== LEXICAL ANALYSIS RESULT =====\n");
     for (int i = 0; i < state->token_count; i++) {
@@ -375,15 +319,10 @@ void print_tokens(CompilerState* state) {
         }
     }
 }
- 
- * @brief Print token statistics summary
- * @param state Compiler state
- * @details Shows counts for each token category and total
- */
+
 void print_statistics(CompilerState* state) {
     int count_key = 0, count_id = 0, count_num = 0, count_op = 0, count_del = 0;
     
-    /* Count tokens by type */
     for (int i = 0; i < state->token_count; i++) {
         switch (state->token_list[i].type) {
             case KEYWORD:    count_key++; break;
@@ -395,7 +334,6 @@ void print_statistics(CompilerState* state) {
         }
     }
     
-    /* Print statistics */
     printf("\n===== TOKEN STATISTICS =====\n");
     printf("keyword: %d\n", count_key);
     printf("identifier: %d\n", count_id);
@@ -409,11 +347,6 @@ void print_statistics(CompilerState* state) {
  * Visualization Functions
  *============================================================================*/
 
-/**
- * @brief Print word classification table
- * @param state Compiler state
- * @details Shows detailed classification of all tokens with line numbers
- */
 void print_classification_table(CompilerState* state) {
     printf("\n===== WORD CLASSIFICATION TABLE =====\n");
     printf("%-6s %-12s %-15s %-6s\n", "Index", "Type", "Value", "Line");
@@ -434,10 +367,6 @@ void print_classification_table(CompilerState* state) {
     }
 }
 
-/**
- * @brief Print state transition diagram (text-based)
- * @details Shows the finite state machine for lexical analysis
- */
 void print_state_transition_diagram() {
     printf("\n===== STATE TRANSITION DIAGRAM =====\n");
     printf("Finite State Machine for PL/0 Lexical Analysis\n");
@@ -468,10 +397,6 @@ void print_state_transition_diagram() {
     printf("Note: S6* transitions to SF when closing */ is found\n");
 }
 
-/**
- * @brief Print lexical recognition flowchart (text-based)
- * @details Shows the flow of token recognition process
- */
 void print_recognition_flowchart() {
     printf("\n===== LEXICAL RECOGNITION FLOWCHART =====\n");
     printf("Token Recognition Process Flow\n");

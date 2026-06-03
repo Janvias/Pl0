@@ -19,15 +19,15 @@ Format: name|kind|value|level|address|quad_index
 --- Scope Level 1 (main) ---
 a|CONST|10|1|0|0
 b|CONST|20|1|0|0
-x|VAR|0|1|0|0
+x1|VAR|0|1|0|0
 y|VAR|0|1|1|0
 
 [QUADRUPLES]
 Format: address|op|arg1|arg2|result
 100|syss|||
 101|+|a|b|T1
-102|:=|T1||x
-103|-|x|5|T2
+102|:=|T1||x1
+103|-|x1|5|T2
 104|:=|T2||y
 105|sysc|||
 
@@ -43,12 +43,12 @@ Format: index|type|value|line
 7|NUMBER|20|4
 8|DELIMITER|;|4
 9|KEYWORD|var|5
-10|IDENTIFIER|x|6
+10|IDENTIFIER|x1|6
 11|DELIMITER|,|6
 12|IDENTIFIER|y|6
 13|DELIMITER|;|6
 14|KEYWORD|begin|7
-15|IDENTIFIER|x|9
+15|IDENTIFIER|x1|9
 16|OPERATOR|:=|9
 17|IDENTIFIER|a|9
 18|OPERATOR|+|9
@@ -56,7 +56,7 @@ Format: index|type|value|line
 20|DELIMITER|;|9
 21|IDENTIFIER|y|10
 22|OPERATOR|:=|10
-23|IDENTIFIER|x|10
+23|IDENTIFIER|x1|10
 24|OPERATOR|-|10
 25|NUMBER|5|10
 26|KEYWORD|end|11

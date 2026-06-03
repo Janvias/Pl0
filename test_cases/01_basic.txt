@@ -3,9 +3,9 @@
 
 const a = 10, b = 20;
 
-var x, y;
+var x1,y;
 
 begin
-    x := a + b;
-    y := x - 5
+    x1:= a + b;
+    y := x1 - 5
 end.
