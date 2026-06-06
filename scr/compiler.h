@@ -86,6 +86,7 @@ typedef struct {
  */
 typedef struct {
     /* Lexer state */
+    char filename[256];            /**< Source filename */
     FILE* fp_in;                  /**< Input file pointer for source code */
     char ch;                      /**< Current character being processed */
     int line;                     /**< Current line number in source file */
@@ -210,6 +211,15 @@ void print_state_transition_diagram();
  * @description Shows the flow of token recognition process
  */
 void print_recognition_flowchart();
+
+/**
+ * @brief Write complete lexical analysis visualization to file
+ * @param state Compiler state
+ * @param filename Output filename
+ * @description Writes token list, statistics, classification table, 
+ *              state transition diagram, and flowchart to a text file
+ */
+void write_lexical_analysis_to_file(CompilerState* state, const char* filename);
 
 /*============================================================================
  * Function Declarations - Syntax/Semantic Analysis (parser.c)
@@ -343,9 +353,10 @@ bool read_compiler_state_from_cache(CompilerState* state, const char* filename);
  * @brief Initialize compiler state
  * @param state Compiler state to initialize
  * @param fp_in Input file pointer
+ * @param filename Source filename
  * @return true if successful, false otherwise
  */
-bool init_compiler_state(CompilerState* state, FILE* fp_in);
+bool init_compiler_state(CompilerState* state, FILE* fp_in, const char* filename);
 
 /**
  * @brief Destroy compiler state and free resources

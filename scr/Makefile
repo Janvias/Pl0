@@ -4,7 +4,7 @@ CFLAGS = -Wall -g
 CXXFLAGS = -Wall -g
 TARGET = compiler
 OBJS = main.o lexer.o parser.o list/list.o symtable/symtable.o \
-       pl0RegexDfa/regex_parser.o pl0RegexDfa/nfa.o pl0RegexDfa/dfa.o pl0RegexDfa/dfa_wrapper.o
+       dfa/regex_parser.o dfa/nfa.o dfa/dfa.o dfa/dfa_wrapper.o dfa/regex_access.o
 
 all: $(TARGET)
 
@@ -14,7 +14,7 @@ $(TARGET): $(OBJS)
 main.o: main.c compiler.h
 	$(CC) $(CFLAGS) -c main.c -o main.o
 
-lexer.o: lexer.c compiler.h pl0RegexDfa/dfa_wrapper.h
+lexer.o: lexer.c compiler.h dfa/dfa_wrapper.h
 	$(CC) $(CFLAGS) -c lexer.c -o lexer.o
 
 parser.o: parser.c compiler.h
@@ -26,18 +26,21 @@ list/list.o: list/list.c list/list.h
 symtable/symtable.o: symtable/symtable.c symtable/symtable.h
 	$(CC) $(CFLAGS) -c symtable/symtable.c -o symtable/symtable.o
 
-pl0RegexDfa/regex_parser.o: pl0RegexDfa/regex_parser.cpp pl0RegexDfa/regex_parser.h
-	$(CXX) $(CXXFLAGS) -c pl0RegexDfa/regex_parser.cpp -o pl0RegexDfa/regex_parser.o
+dfa/regex_parser.o: dfa/regex_parser.cpp dfa/regex_parser.h
+	$(CXX) $(CXXFLAGS) -c dfa/regex_parser.cpp -o dfa/regex_parser.o
 
-pl0RegexDfa/nfa.o: pl0RegexDfa/nfa.cpp pl0RegexDfa/nfa.h
-	$(CXX) $(CXXFLAGS) -c pl0RegexDfa/nfa.cpp -o pl0RegexDfa/nfa.o
+dfa/nfa.o: dfa/nfa.cpp dfa/nfa.h
+	$(CXX) $(CXXFLAGS) -c dfa/nfa.cpp -o dfa/nfa.o
 
-pl0RegexDfa/dfa.o: pl0RegexDfa/dfa.cpp pl0RegexDfa/dfa.h pl0RegexDfa/nfa.h
-	$(CXX) $(CXXFLAGS) -c pl0RegexDfa/dfa.cpp -o pl0RegexDfa/dfa.o
+dfa/dfa.o: dfa/dfa.cpp dfa/dfa.h dfa/nfa.h
+	$(CXX) $(CXXFLAGS) -c dfa/dfa.cpp -o dfa/dfa.o
 
-pl0RegexDfa/dfa_wrapper.o: pl0RegexDfa/dfa_wrapper.cpp pl0RegexDfa/dfa_wrapper.h \
-                          pl0RegexDfa/regex_parser.h pl0RegexDfa/nfa.h pl0RegexDfa/dfa.h
-	$(CXX) $(CXXFLAGS) -c pl0RegexDfa/dfa_wrapper.cpp -o pl0RegexDfa/dfa_wrapper.o
+dfa/dfa_wrapper.o: dfa/dfa_wrapper.cpp dfa/dfa_wrapper.h \
+                    dfa/regex_parser.h dfa/nfa.h dfa/dfa.h
+	$(CXX) $(CXXFLAGS) -c dfa/dfa_wrapper.cpp -o dfa/dfa_wrapper.o
+
+dfa/regex_access.o: dfa/regex_access.cpp dfa/regex_access.h pl0_regex/pl0_regex.h
+	$(CXX) $(CXXFLAGS) -c dfa/regex_access.cpp -o dfa/regex_access.o
 
 clean:
 	del /Q $(OBJS) $(TARGET).exe 2>nul || echo Clean done

@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     
     /* Initialize compiler state - replaces global variables */
     CompilerState state;
-    if (!init_compiler_state(&state, fp_in)) {
+    if (!init_compiler_state(&state, fp_in, argv[1])) {
         printf("Error: Cannot initialize compiler state\n");
         fclose(fp_in);
         return 1;
@@ -64,6 +64,9 @@ int main(int argc, char *argv[]) {
     printf("       PL/0 Compiler v2.0\n");
     printf("========================================\n");
     printf("Source file: %s\n\n", argv[1]);
+    
+    /* Create output filename based on input filename */
+    char *dot_pos = strrchr(argv[1], '.');
     
     /*------------------------------------------------------------------------
      * Phase 1: Lexical Analysis
@@ -76,12 +79,25 @@ int main(int argc, char *argv[]) {
     /* Perform lexical analysis */
     lexical_analysis(&state);
     
-    /* Print lexical analysis results */
+    /* Print lexical analysis results to console */
     print_tokens(&state);
     print_statistics(&state);
     print_classification_table(&state);
     print_state_transition_diagram();
     print_recognition_flowchart();
+    
+    /* Write lexical analysis visualization to file */
+    char lex_filename[256];
+    if (dot_pos != NULL) {
+        int base_len = dot_pos - argv[1];
+        strncpy(lex_filename, argv[1], base_len);
+        lex_filename[base_len] = '\0';
+        strcat(lex_filename, "_lex.txt");
+    } else {
+        strcpy(lex_filename, argv[1]);
+        strcat(lex_filename, "_lex.txt");
+    }
+    write_lexical_analysis_to_file(&state, lex_filename);
     
     printf("\nLexical analysis completed. Total tokens: %d\n", state.token_count);
     
@@ -127,7 +143,6 @@ int main(int argc, char *argv[]) {
     
     /* Create output filename based on input filename */
     char output_filename[256];
-    char *dot_pos = strrchr(argv[1], '.');
     
     if (dot_pos != NULL) {
         /* Replace extension with _quad.txt */

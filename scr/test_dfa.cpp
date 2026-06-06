@@ -1,9 +1,9 @@
 #include <iostream>
 #include <stack>
-#include "pl0RegexDfa/regex_parser.h"
-#include "pl0RegexDfa/nfa.h"
-#include "pl0RegexDfa/dfa.h"
-#include "pl0RegexDfa/pl0_regex.h"
+#include "pl0_regex/pl0_regex.h"
+#include "dfa/regex_parser.h"
+#include "dfa/nfa.h"
+#include "dfa/dfa.h"
 
 int main() {
     try {

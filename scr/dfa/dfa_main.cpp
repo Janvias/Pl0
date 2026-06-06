@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
-#include "pl0_regex.h"
+#include "../pl0_regex/pl0_regex.h"
 #include "regex_parser.h"
 #include "nfa.h"
 #include "dfa.h"

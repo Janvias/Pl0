@@ -885,9 +885,11 @@ bool read_compiler_state_from_cache(CompilerState* state, const char* filename) 
  * @param fp_in Input file pointer
  * @return true if successful, false otherwise
  */
-bool init_compiler_state(CompilerState* state, FILE* fp_in) {
+bool init_compiler_state(CompilerState* state, FILE* fp_in, const char* filename) {
     memset(state, 0, sizeof(CompilerState));
     state->fp_in = fp_in;
+    strncpy(state->filename, filename, sizeof(state->filename) - 1);
+    state->filename[sizeof(state->filename) - 1] = '\0';
     state->line = 1;
     state->next_instr = 100;
     
