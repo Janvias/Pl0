@@ -1,0 +1,7 @@
+const n=10;
+var x,y;
+begin
+  x:=n;
+  y:=x+5;
+  if y>10 then write(y)
+end.

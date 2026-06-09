@@ -2,29 +2,29 @@
 // This test covers: all PL/0 features combined
 
 const MAX = 100, MIN = 1;
-var counter, total, temp;
+var cnt, tot, tmp;
 
-procedure computeSum;
+procedure sum;
     var i;
     begin
         i := 0;
-        total := 0;
-        while i < counter do
+        tot := 0;
+        while i < cnt do
             begin
-                total := total + i;
+                tot := tot + i;
                 i := i + 1
             end
     end;
 
-procedure computeAverage;
+procedure avg;
     begin
-        if counter > 0 then
-            temp := total / counter
+        if cnt > 0 then
+            tmp := tot / cnt
     end;
 
 begin
-    counter := 10;
-    call computeSum;
-    call computeAverage;
-    write(total)
+    cnt := 10;
+    call sum;
+    call avg;
+    write(tot)
 end.

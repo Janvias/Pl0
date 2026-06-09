@@ -2,5 +2,5 @@ var x, y;
 begin
     x := 10;
     y := x + 5;
-    write y
+    write(y)
 end.

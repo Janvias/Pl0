@@ -1,16 +1,16 @@
 // Test 4: Procedure Declaration and Call
 // This test covers: procedure declaration and call statement
 
-const multiplier = 3;
+const m = 3;
 
-var input_val, output_val;
+var inp, out;
 
 procedure calc;
     begin
-        output_val := input_val * multiplier
+        out := inp * m
     end;
 
 begin
-    input_val := 5;
+    inp := 5;
     call calc
 end.

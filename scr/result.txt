@@ -1,0 +1,24 @@
+===== LL(1) Analysis =====
+  ===== LL(1) Analysis Start =====
+  Stack: [#,Program] | Input: const
+  Expand: Program -> SubProgram .
+  Stack: [#,.,SubProgram] | Input: const
+  Error: LLTable[SubProgram,const] is empty
+
+===== SLR(1) Analysis =====
+  ===== SLR(1) Analysis Start =====
+  StateStack: [0] | SymStack: [#] | Input: const
+  Shift: const, State4
+  StateStack: [0,4] | SymStack: [#,const] | Input: Ident
+  Shift: Ident, State11
+  StateStack: [0,4,11] | SymStack: [#,const,Ident] | Input: =
+  Shift: =, State17
+  StateStack: [0,4,11,17] | SymStack: [#,const,Ident,=] | Input: Number
+  Shift: Number, State32
+  StateStack: [0,4,11,17,32] | SymStack: [#,const,Ident,=,Number] | Input: ;
+  Reduce: ConstDef -> Ident = Number
+  GOTO(4,ConstDef)=10
+  StateStack: [0,4,10] | SymStack: [#,const,ConstDef] | Input: ;
+  Shift: ;, State16
+  StateStack: [0,4,10,16] | SymStack: [#,const,ConstDef,;] | Input: var
+  Error: ACTION[16,var] is empty

@@ -1,0 +1,76 @@
+========================================
+PL/0 Compiler Cache File
+Generated: 12:12:14 Jun  8 2026
+========================================
+
+[COMPILER_STATE]
+token_count=34
+quad_count=11
+temp_count=2
+next_instr=111
+syntax_error=0
+semantic_error=0
+
+[SYMBOL_TABLE]
+Format: name|kind|value|level|address|quad_index
+
+--- Scope Level 0 ---
+
+--- Scope Level 1 (main) ---
+i|VAR|0|1|0|0
+sum|VAR|0|1|1|0
+
+[QUADRUPLES]
+Format: address|op|arg1|arg2|result
+100|syss|||
+101|:=|0||i
+102|:=|0||sum
+103|<|i|10|105
+104|j|||110
+105|+|sum|i|T1
+106|:=|T1||sum
+107|+|i|1|T2
+108|:=|T2||i
+109|j|||103
+110|sysc|||
+
+[TOKENS]
+Format: index|type|value|line
+0|KEYWORD|var|4
+1|IDENTIFIER|i|4
+2|DELIMITER|,|4
+3|IDENTIFIER|sum|4
+4|DELIMITER|;|4
+5|KEYWORD|begin|5
+6|IDENTIFIER|i|7
+7|OPERATOR|:=|7
+8|NUMBER|0|7
+9|DELIMITER|;|7
+10|IDENTIFIER|sum|8
+11|OPERATOR|:=|8
+12|NUMBER|0|8
+13|DELIMITER|;|8
+14|KEYWORD|while|9
+15|IDENTIFIER|i|9
+16|OPERATOR|<|9
+17|NUMBER|10|9
+18|KEYWORD|do|9
+19|KEYWORD|begin|10
+20|IDENTIFIER|sum|11
+21|OPERATOR|:=|11
+22|IDENTIFIER|sum|11
+23|OPERATOR|+|11
+24|IDENTIFIER|i|11
+25|DELIMITER|;|11
+26|IDENTIFIER|i|12
+27|OPERATOR|:=|12
+28|IDENTIFIER|i|12
+29|OPERATOR|+|12
+30|NUMBER|1|12
+31|KEYWORD|end|13
+32|KEYWORD|end|14
+33|DELIMITER|.|14
+
+========================================
+End of Cache File
+========================================

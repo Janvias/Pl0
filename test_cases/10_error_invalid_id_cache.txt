@@ -1,0 +1,40 @@
+========================================
+PL/0 Compiler Cache File
+Generated: 12:12:14 Jun  8 2026
+========================================
+
+[COMPILER_STATE]
+token_count=9
+quad_count=2
+temp_count=0
+next_instr=102
+syntax_error=1
+semantic_error=0
+
+[SYMBOL_TABLE]
+Format: name|kind|value|level|address|quad_index
+
+--- Scope Level 0 ---
+
+--- Scope Level 1 (main) ---
+
+[QUADRUPLES]
+Format: address|op|arg1|arg2|result
+100|syss|||
+101|sysc|||
+
+[TOKENS]
+Format: index|type|value|line
+0|KEYWORD|var|4
+1|ERROR|123abc|4
+2|DELIMITER|;|4
+3|KEYWORD|begin|5
+4|IDENTIFIER|abc|7
+5|OPERATOR|:=|7
+6|NUMBER|10|7
+7|KEYWORD|end|8
+8|DELIMITER|.|8
+
+========================================
+End of Cache File
+========================================

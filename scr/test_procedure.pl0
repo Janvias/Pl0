@@ -1,0 +1,12 @@
+var x, y;
+procedure add;
+    var z;
+    begin
+        z := x + y;
+        write(z)
+    end;
+begin
+    x := 5;
+    y := 3;
+    call add
+end.

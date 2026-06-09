@@ -1,14 +1,14 @@
 ========================================
 PL/0 Compiler Cache File
-Generated: 16:08:34 Jun  1 2026
+Generated: 12:12:14 Jun  8 2026
 ========================================
 
 [COMPILER_STATE]
-token_count=40
-quad_count=2
-temp_count=0
-next_instr=102
-syntax_error=1
+token_count=30
+quad_count=6
+temp_count=1
+next_instr=106
+syntax_error=0
 semantic_error=0
 
 [SYMBOL_TABLE]
@@ -17,54 +17,52 @@ Format: name|kind|value|level|address|quad_index
 --- Scope Level 0 ---
 
 --- Scope Level 1 (main) ---
+m|CONST|3|1|0|0
+inp|VAR|0|1|0|0
+out|VAR|0|1|1|0
+calc|PROCEDURE|0|1|0|1
 
 [QUADRUPLES]
 Format: address|op|arg1|arg2|result
 100|syss|||
-101|sysc|||
+101|*|inp|m|T1
+102|:=|T1||out
+103|:=|5||inp
+104|call|calc||
+105|sysc|||
 
 [TOKENS]
 Format: index|type|value|line
 0|KEYWORD|const|4
-1|ERROR|multiplier|4
+1|IDENTIFIER|m|4
 2|OPERATOR|=|4
 3|NUMBER|3|4
 4|DELIMITER|;|4
 5|KEYWORD|var|5
-6|IDENTIFIER|input|6
-7|ERROR|_|6
-8|IDENTIFIER|val|6
-9|DELIMITER|,|6
-10|IDENTIFIER|output|6
-11|ERROR|_|6
-12|IDENTIFIER|val|6
-13|DELIMITER|;|6
-14|KEYWORD|procedure|7
-15|IDENTIFIER|calc|8
-16|DELIMITER|;|8
-17|KEYWORD|begin|9
-18|IDENTIFIER|output|10
-19|ERROR|_|10
-20|IDENTIFIER|val|10
-21|OPERATOR|:=|10
-22|IDENTIFIER|input|10
-23|ERROR|_|10
-24|IDENTIFIER|val|10
-25|OPERATOR|*|10
-26|ERROR|multiplier|10
-27|KEYWORD|end|11
-28|DELIMITER|;|11
-29|KEYWORD|begin|12
-30|IDENTIFIER|input|14
-31|ERROR|_|14
-32|IDENTIFIER|val|14
-33|OPERATOR|:=|14
-34|NUMBER|5|14
-35|DELIMITER|;|14
-36|KEYWORD|call|15
-37|IDENTIFIER|calc|15
-38|KEYWORD|end|16
-39|DELIMITER|.|16
+6|IDENTIFIER|inp|6
+7|DELIMITER|,|6
+8|IDENTIFIER|out|6
+9|DELIMITER|;|6
+10|KEYWORD|procedure|7
+11|IDENTIFIER|calc|8
+12|DELIMITER|;|8
+13|KEYWORD|begin|9
+14|IDENTIFIER|out|10
+15|OPERATOR|:=|10
+16|IDENTIFIER|inp|10
+17|OPERATOR|*|10
+18|IDENTIFIER|m|10
+19|KEYWORD|end|11
+20|DELIMITER|;|11
+21|KEYWORD|begin|12
+22|IDENTIFIER|inp|14
+23|OPERATOR|:=|14
+24|NUMBER|5|14
+25|DELIMITER|;|14
+26|KEYWORD|call|15
+27|IDENTIFIER|calc|15
+28|KEYWORD|end|16
+29|DELIMITER|.|16
 
 ========================================
 End of Cache File

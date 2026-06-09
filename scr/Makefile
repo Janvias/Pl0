@@ -1,51 +1,26 @@
-CC = gcc
-CXX = g++
-CFLAGS = -Wall -g
-CXXFLAGS = -Wall -g
-TARGET = compiler
-OBJS = main.o lexer.o parser.o list/list.o symtable/symtable.o \
-       dfa/regex_parser.o dfa/nfa.o dfa/dfa.o dfa/dfa_wrapper.o dfa/regex_access.o
+# PL/0 Syntax Analyzer Makefile (精简版)
+# LL(1) + SLR(1) 双模块语法分析系统
 
+CXX = g++
+CXXFLAGS = -Wall -std=c++17 -I.
+TARGET = syntax_analyzer
+
+# 精简版：单文件编译
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+$(TARGET): main_syntax.cpp include/syntax_analyzer.hpp
+	$(CXX) $(CXXFLAGS) -o $(TARGET) main_syntax.cpp
 
-main.o: main.c compiler.h
-	$(CC) $(CFLAGS) -c main.c -o main.o
-
-lexer.o: lexer.c compiler.h dfa/dfa_wrapper.h
-	$(CC) $(CFLAGS) -c lexer.c -o lexer.o
-
-parser.o: parser.c compiler.h
-	$(CC) $(CFLAGS) -c parser.c -o parser.o
-
-list/list.o: list/list.c list/list.h
-	$(CC) $(CFLAGS) -c list/list.c -o list/list.o
-
-symtable/symtable.o: symtable/symtable.c symtable/symtable.h
-	$(CC) $(CFLAGS) -c symtable/symtable.c -o symtable/symtable.o
-
-dfa/regex_parser.o: dfa/regex_parser.cpp dfa/regex_parser.h
-	$(CXX) $(CXXFLAGS) -c dfa/regex_parser.cpp -o dfa/regex_parser.o
-
-dfa/nfa.o: dfa/nfa.cpp dfa/nfa.h
-	$(CXX) $(CXXFLAGS) -c dfa/nfa.cpp -o dfa/nfa.o
-
-dfa/dfa.o: dfa/dfa.cpp dfa/dfa.h dfa/nfa.h
-	$(CXX) $(CXXFLAGS) -c dfa/dfa.cpp -o dfa/dfa.o
-
-dfa/dfa_wrapper.o: dfa/dfa_wrapper.cpp dfa/dfa_wrapper.h \
-                    dfa/regex_parser.h dfa/nfa.h dfa/dfa.h
-	$(CXX) $(CXXFLAGS) -c dfa/dfa_wrapper.cpp -o dfa/dfa_wrapper.o
-
-dfa/regex_access.o: dfa/regex_access.cpp dfa/regex_access.h pl0_regex/pl0_regex.h
-	$(CXX) $(CXXFLAGS) -c dfa/regex_access.cpp -o dfa/regex_access.o
-
-clean:
-	del /Q $(OBJS) $(TARGET).exe 2>nul || echo Clean done
-
+# 运行
 run: $(TARGET)
-	$(TARGET).exe
+	./$(TARGET)
 
-.PHONY: all clean run
+# 清理
+clean:
+	rm -f $(TARGET) *.o src/*.o dfa/*.o
+
+# 测试
+test: $(TARGET)
+	./$(TARGET)
+
+.PHONY: all run clean test
