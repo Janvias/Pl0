@@ -1,60 +1,38 @@
+/**
+ * @file pl0_regex.h
+ * @brief PL/0 Regular Expression Definitions
+ * @details Defines regular expression patterns for PL/0 lexical elements
+ *          used by the DFA-based lexer validation.
+ */
+
 #ifndef PL0_REGEX_H
 #define PL0_REGEX_H
 
 #include <string>
 
 namespace PL0Regex {
-    // ==================== 词法层核心正则（Token识别） ====================
-    // 标识符：字母开头，后续字母/数字
-    const std::string REG_IDENT = "([a-zA-Z][a-zA-Z0-9]*)";
-    // 无符号整数：纯数字
-    const std::string REG_NUMBER = "([0-9]+)";
-    // PL/0全部关键字
-    const std::string REG_KEYWORD = "(const|var|procedure|begin|end|if|then|while|do|call|odd|read|write)";
-    // 双字符运算符
-    const std::string REG_DOUBLE_OP = "(:=|<=|>=|<>)";
-    // 单字符运算符、分隔符、结束符
-    const std::string REG_SINGLE_OP = "(\\+|-|\\*|/|=|#|<|>|,|;|\\(|\\)|\\.)";
-    // 空白符（过滤用）
-    const std::string REG_BLANK = "( |\\t|\\r|\\n)+";
 
-    // ==================== 语法层核心正则（语句/程序匹配） ====================
-    // 常量定义：标识符=数字
-    const std::string REG_CONST_DEF = "([a-zA-Z][a-zA-Z0-9]*=[0-9]+)";
-    // 常量说明部分
-    const std::string REG_CONST_PART = "(const[a-zA-Z][a-zA-Z0-9]*=[0-9]+(,[a-zA-Z][a-zA-Z0-9]*=[0-9]+)*;)";
-    // 变量说明部分
-    const std::string REG_VAR_PART = "(var[a-zA-Z][a-zA-Z0-9]*(,[a-zA-Z][a-zA-Z0-9]*)*;)";
-    // 过程首部
-    const std::string REG_PROC_HEAD = "(procedure[a-zA-Z][a-zA-Z0-9]*;)";
-    // 运算符集合
-    const std::string REG_ADD_OP = "(\\+|-)";
-    const std::string REG_MUL_OP = "(\\*|/)";
-    const std::string REG_REL_OP = "(=|#|<|<=|>|>=)";
-    // 因子：ID / NUM / (表达式)
-    const std::string REG_FACTOR = "([a-zA-Z][a-zA-Z0-9]*|[0-9]+|\\(([a-zA-Z0-9\\+\\-\\*/])*\\))";
-    // 项：因子 (乘除运算符 因子)*
-    const std::string REG_TERM = "(" + REG_FACTOR + "(" + REG_MUL_OP + REG_FACTOR + ")*)";
-    // 表达式：(+/-)? 项 (加减运算符 项)*
-    const std::string REG_EXPR = "(([\\+\\-])?" + REG_TERM + "(" + REG_ADD_OP + REG_TERM + ")*)";
-    // 条件：表达式 关系符 表达式 | odd 表达式
-    const std::string REG_CONDITION = "((" + REG_EXPR + REG_REL_OP + REG_EXPR + ")|(odd" + REG_EXPR + "))";
-    // 赋值语句
-    const std::string REG_ASSIGN = "([a-zA-Z][a-zA-Z0-9]*:=" + REG_EXPR + ")";
-    // 条件语句
-    const std::string REG_IF_STMT = "(if" + REG_CONDITION + "then" + REG_ASSIGN + ")";
-    // 循环语句
-    const std::string REG_WHILE_STMT = "(while" + REG_CONDITION + "do" + REG_ASSIGN + ")";
-    // 过程调用语句
-    const std::string REG_CALL_STMT = "(call[a-zA-Z][a-zA-Z0-9]*)";
-    // 读语句
-    const std::string REG_READ_STMT = "(read\\([a-zA-Z][a-zA-Z0-9]*(,[a-zA-Z][a-zA-Z0-9]*)*\\))";
-    // 写语句
-    const std::string REG_WRITE_STMT = "(write\\(" + REG_EXPR + "(," + REG_EXPR + ")*\\))";
-    // 复合语句
-    const std::string REG_COMPOUND_STMT = "(begin" + REG_ASSIGN + "(;" + REG_ASSIGN + ")*end)";
-    // PL/0完整程序框架
-    const std::string REG_PL0_PROGRAM = "(" + REG_CONST_PART + "?" + REG_VAR_PART + "?" + REG_COMPOUND_STMT + "\\.)";
-}
+// 标识符: 字母开头，后跟字母或数字（最多8个字符）
+static const std::string REG_IDENT =
+    "([a-zA-Z]|[a-zA-Z][a-zA-Z0-9]|[a-zA-Z][a-zA-Z0-9]{2}|"
+    "[a-zA-Z][a-zA-Z0-9]{3}|[a-zA-Z][a-zA-Z0-9]{4}|"
+    "[a-zA-Z][a-zA-Z0-9]{5}|[a-zA-Z][a-zA-Z0-9]{6}|"
+    "[a-zA-Z][a-zA-Z0-9]{7})";
+
+// 数字: 一位或多位数字（最多8位）
+static const std::string REG_NUMBER =
+    "([0-9]|[0-9]{2}|[0-9]{3}|[0-9]{4}|[0-9]{5}|[0-9]{6}|[0-9]{7}|[0-9]{8})";
+
+// 关键字
+static const std::string REG_KEYWORD =
+    "(const|var|procedure|begin|end|if|then|while|do|call|read|write|odd)";
+
+// 双字符运算符
+static const std::string REG_DOUBLE_OP = "(<=|>=|:=)";
+
+// 单字符运算符和分隔符
+static const std::string REG_SINGLE_OP = "(\\+|-|\\*|/|=|#|<|>)";
+
+} // namespace PL0Regex
 
 #endif // PL0_REGEX_H

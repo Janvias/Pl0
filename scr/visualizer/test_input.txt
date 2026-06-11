@@ -1,6 +1,0 @@
-const a = 10;
-var x, y;
-begin
-    x := a + 5;
-    y := x - 3
-end.

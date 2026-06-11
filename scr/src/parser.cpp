@@ -1,6 +1,15 @@
 /**
  * @file parser.cpp
  * @brief Parser Implementation
+ * @details This file implements a recursive descent parser for the PL/0 compiler.
+ *          The parser uses LL(1) grammar with single lookahead token to determine
+ *          production rules without backtracking.
+ * 
+ * LL(1) Grammar Characteristics:
+ * - Single lookahead token (currentToken_) determines production selection
+ * - No left recursion (eliminated by right-recursion transformation)
+ * - FIRST sets are disjoint for alternative productions
+ * - FOLLOW sets properly handled for error detection
  */
 
 #include "../include/pl0_parser.hpp"
@@ -9,8 +18,13 @@
 namespace PL0 {
 
 //============================================================================
-// Parser 实现
+// Parser 实现 - 递归下降分析法 (Recursive Descent Parsing)
 //============================================================================
+// 递归下降分析法是一种自顶向下的语法分析方法，核心特点：
+// 1. 每个非终结符对应一个函数
+// 2. 通过单一向前看符号(lookahead=1)决定推导方向
+// 3. 无需回溯，时间复杂度为O(n)
+// 4. 要求文法为LL(1)文法
 
 Parser::Parser(Lexer* lexer, SymbolTable* symTable, CodeGenerator* codeGen)
     : lexer_(lexer), symTable_(symTable), codeGen_(codeGen),
@@ -178,6 +192,21 @@ void Parser::procedureDeclaration() {
     codeGen_->emit(OpCode::RET);
 }
 
+/**
+ * @brief 语句解析 - LL(1)分支选择示例
+ * 
+ * LL(1)文法确保机制：通过检查当前token（lookahead=1）唯一确定产生式
+ * 
+ * statement 的 FIRST 集：{begin, id, if, while, call, read, write}
+ * 各分支的 FIRST 集互不相交，确保无回溯选择：
+ * - FIRST(begin ... end) = {begin}
+ * - FIRST(id := expr) = {id}
+ * - FIRST(if ...) = {if}
+ * - FIRST(while ...) = {while}
+ * - FIRST(call ...) = {call}
+ * - FIRST(read ...) = {read}
+ * - FIRST(write ...) = {write}
+ */
 void Parser::statement() {
     // 处理 begin...end 块
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "begin") {
@@ -197,7 +226,7 @@ void Parser::statement() {
         return;
     }
 
-    // 处理赋值语句
+    // 处理赋值语句 - FIRST(id) = {id}
     if (currentToken_.type == TokenType::IDENTIFIER) {
         std::string name = currentToken_.value;
         match(TokenType::IDENTIFIER);
@@ -213,7 +242,7 @@ void Parser::statement() {
         return;
     }
 
-    // 处理 if 语句
+    // 处理 if 语句 - FIRST(if) = {if}
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "if") {
         match(TokenType::KEYWORD);
         condition();
@@ -227,7 +256,7 @@ void Parser::statement() {
         return;
     }
 
-    // 处理 while 语句
+    // 处理 while 语句 - FIRST(while) = {while}
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "while") {
         match(TokenType::KEYWORD);
         std::string startLabel = "L" + std::to_string(codeGen_->getQuadruples().size());
@@ -244,7 +273,7 @@ void Parser::statement() {
         return;
     }
 
-    // 处理 call 语句
+    // 处理 call 语句 - FIRST(call) = {call}
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "call") {
         match(TokenType::KEYWORD);
         if (currentToken_.type != TokenType::IDENTIFIER) {
@@ -257,7 +286,7 @@ void Parser::statement() {
         return;
     }
 
-    // 处理 read 语句
+    // 处理 read 语句 - FIRST(read) = {read}
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "read") {
         match(TokenType::KEYWORD);
         if (currentToken_.type != TokenType::DELIMITER || currentToken_.value != "(") {
@@ -280,7 +309,7 @@ void Parser::statement() {
         return;
     }
 
-    // 处理 write 语句
+    // 处理 write 语句 - FIRST(write) = {write}
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "write") {
         match(TokenType::KEYWORD);
         if (currentToken_.type != TokenType::DELIMITER || currentToken_.value != "(") {
@@ -335,6 +364,21 @@ void Parser::condition() {
     }
 }
 
+/**
+ * @brief 表达式解析 - 左递归消除示例
+ * 
+ * LL(1)文法要求：必须消除左递归
+ * 
+ * 原始左递归文法：
+ *   expression → expression + term | expression - term | term
+ * 
+ * 右递归改写（消除左递归后）：
+ *   expression → term { + term | - term }
+ * 
+ * 实现方式：先解析第一个term，然后用循环处理后续的二元运算符
+ * 
+ * FIRST(expression) = {+, -, id, num, (}
+ */
 void Parser::expression() {
     std::string op;
     if (currentToken_.type == TokenType::OPERATOR &&
@@ -343,12 +387,14 @@ void Parser::expression() {
         match(TokenType::OPERATOR);
     }
 
+    // 先解析第一个 term（非递归开头）
     term();
 
     if (!op.empty() && op == "-") {
         codeGen_->emit(OpCode::SUB, "0", "", "");
     }
 
+    // 循环处理后续的二元运算符（右递归结构）
     while (currentToken_.type == TokenType::OPERATOR &&
            (currentToken_.value == "+" || currentToken_.value == "-")) {
         op = currentToken_.value;
@@ -362,9 +408,22 @@ void Parser::expression() {
     }
 }
 
+/**
+ * @brief 项解析 - 左递归消除示例
+ * 
+ * 原始左递归文法：
+ *   term → term * factor | term / factor | factor
+ * 
+ * 右递归改写：
+ *   term → factor { * factor | / factor }
+ * 
+ * FIRST(term) = {id, num, (}
+ */
 void Parser::term() {
+    // 先解析第一个 factor（非递归开头）
     factor();
 
+    // 循环处理后续的乘除运算符（右递归结构）
     while (currentToken_.type == TokenType::OPERATOR &&
            (currentToken_.value == "*" || currentToken_.value == "/")) {
         std::string op = currentToken_.value;
@@ -378,7 +437,23 @@ void Parser::term() {
     }
 }
 
+/**
+ * @brief 因子解析 - FIRST集分支选择示例
+ * 
+ * factor 产生式：
+ *   factor → id | num | ( expression )
+ * 
+ * FIRST(factor) = {id, num, (}
+ * 
+ * 各分支的 FIRST 集互不相交：
+ * - FIRST(id) = {id}
+ * - FIRST(num) = {num}
+ * - FIRST((expression)) = {(}
+ * 
+ * 通过检查当前 token 类型即可唯一确定选择哪个产生式
+ */
 void Parser::factor() {
+    // FIRST(id) = {id}
     if (currentToken_.type == TokenType::IDENTIFIER) {
         std::string name = currentToken_.value;
         Symbol* sym = symTable_->lookup(name);
@@ -389,13 +464,16 @@ void Parser::factor() {
         if (sym && sym->kind == SymbolKind::CONSTANT) {
             codeGen_->emit(OpCode::ADD, std::to_string(sym->value), "", "");
         }
+    // FIRST(num) = {num}
     } else if (currentToken_.type == TokenType::NUMBER) {
         int value = std::stoi(currentToken_.value);
         codeGen_->emit(OpCode::ADD, std::to_string(value), "", "");
         match(TokenType::NUMBER);
+    // FIRST((expression)) = {(}
     } else if (currentToken_.type == TokenType::DELIMITER && currentToken_.value == "(") {
         match(TokenType::DELIMITER);
         expression();
+        // FOLLOW 集检查：期望 ')'
         if (currentToken_.type != TokenType::DELIMITER || currentToken_.value != ")") {
             error("Expected ')'");
         }

@@ -16,6 +16,7 @@
 #include "pl0_symtable.hpp"
 #include "pl0_codegen.hpp"
 #include "pl0_parser.hpp"
+#include "pl0_lr1_parser.hpp"
 
 namespace PL0 {
 
@@ -24,6 +25,8 @@ namespace PL0 {
  * @brief Main compiler class that coordinates all compilation phases
  * @details The Compiler class orchestrates lexical analysis, syntax analysis,
  *          semantic analysis, and code generation for PL/0 source programs.
+ *          Supports dual-mode parsing: LL(1) only, LR(1) only, or both for
+ *          cross-validation.
  */
 class Compiler {
 public:
@@ -32,6 +35,11 @@ public:
 
     // 编译流程
     bool compile(const std::string& inputFile);
+
+    // 解析模式配置
+    void setParserMode(ParserMode mode) { parserMode_ = mode; }
+    ParserMode getParserMode() const { return parserMode_; }
+    const ValidationResult& getValidationResult() const { return validationResult_; }
 
     // 输出控制
     void setVerbose(bool verbose) { verbose_ = verbose; }
@@ -51,16 +59,20 @@ private:
     std::unique_ptr<Lexer> lexer_;
     std::unique_ptr<SymbolTable> symTable_;
     std::unique_ptr<CodeGenerator> codeGen_;
-    std::unique_ptr<Parser> parser_;
+    std::unique_ptr<Parser> ll1Parser_;
+    std::unique_ptr<LR1Parser> lr1Parser_;
 
+    ParserMode parserMode_;
     bool verbose_;
     bool success_;
     std::string errorMessage_;
+    ValidationResult validationResult_;
 
     // 私有方法
     void printHeader(std::ostream& os);
     void printStateTransitionDiagram(std::ostream& os);
     void printRecognitionFlowchart(std::ostream& os);
+    void printValidationResult(std::ostream& os);
 };
 
 } // namespace PL0
