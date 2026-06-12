@@ -22,7 +22,7 @@
 namespace PL0 {
 
 //============================================================================
-// TokenType 枚举
+// TokenType Enum
 //============================================================================
 
 enum class TokenType {
@@ -46,16 +46,16 @@ enum class SymbolKind {
 };
 
 //============================================================================
-// 常量定义
+// Constants
 //============================================================================
 
 /**
- * @brief 标识符最大长度
+ * @brief Maximum identifier length
  */
 static constexpr size_t MAX_IDENTIFIER_LENGTH = 8;
 
 /**
- * @brief 数字最大长度
+ * @brief Maximum number length
  */
 static constexpr size_t MAX_NUMBER_LENGTH = 8;
 
@@ -65,17 +65,17 @@ static constexpr size_t MAX_NUMBER_LENGTH = 8;
 static constexpr int START_ADDRESS = 100;
 
 //============================================================================
-// OpCode 枚举
+// OpCode Enum
 //============================================================================
 
 enum class OpCode {
-    // 算术运算
+    // Arithmetic operations
     ADD,
     SUB,
     MUL,
     DIV,
     
-    // 比较运算
+    // Comparison operations
     ODD,
     EQ,
     NEQ,
@@ -84,19 +84,19 @@ enum class OpCode {
     GT,
     GTE,
     
-    // 赋值
+    // Assignment
     ASSIGN,
     
-    // 跳转
+    // Jump
     JUMP,
     JZ,
     JNZ,
     
-    // 函数调用
+    // Function call
     CALL,
     RET,
     
-    // 系统调用
+    // System calls
     SYSS,
     SYSC,
     READ,
@@ -104,7 +104,7 @@ enum class OpCode {
 };
 
 //============================================================================
-// Token 结构体
+// Token Struct
 //============================================================================
 
 struct Token {
@@ -134,7 +134,7 @@ struct Symbol {
 };
 
 //============================================================================
-// Quadruple 结构体
+// Quadruple Struct
 //============================================================================
 
 struct Quadruple {

@@ -1,0 +1,22 @@
+# Build artifacts
+build/
+*.o
+*.exe
+*.a
+*.out
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated output
+*_cache.txt
+*_lex.txt
+*_quad.txt
+
+# Claude
+.claude/

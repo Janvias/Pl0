@@ -18,22 +18,27 @@
 
 namespace PL0 {
 
+// Forward declaration
+class ASTBuilder;
+
 /**
  * @class Parser
  * @brief Recursive descent parser for PL/0 grammar
- * @details The Parser class implements the PL/0 grammar using recursive descent.
- *          It coordinates with the Lexer, SymbolTable, and CodeGenerator
- *          to perform syntax and semantic analysis.
+ * @details Implements LL(1) recursive descent parsing. Optionally builds
+ *          an AST via an injected ASTBuilder for visualization.
  */
 class Parser {
 public:
     Parser(Lexer* lexer, SymbolTable* symTable, CodeGenerator* codeGen);
     ~Parser();
 
-    // 语法分析
+    // Parse
     bool parse();
 
-    // 错误处理
+    // AST building (optional — set before calling parse())
+    void setASTBuilder(ASTBuilder* ast) { astBuilder_ = ast; }
+
+    // Error handling
     bool hasError() const { return hasError_; }
     const std::string& getErrorMessage() const { return errorMessage_; }
 
@@ -41,11 +46,12 @@ private:
     Lexer* lexer_;
     SymbolTable* symTable_;
     CodeGenerator* codeGen_;
+    ASTBuilder* astBuilder_ = nullptr;
     Token currentToken_;
     bool hasError_;
     std::string errorMessage_;
 
-    // 递归下降分析函数
+    // Recursive descent functions
     void program();
     void block();
     void constDeclaration();
@@ -57,11 +63,9 @@ private:
     void term();
     void factor();
 
-    // 辅助函数
+    // Helpers
     void match(TokenType expected);
     void error(const std::string& message);
-    
-    // 错误恢复
     void sync();
 };
 

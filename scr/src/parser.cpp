@@ -13,7 +13,12 @@
  */
 
 #include "../include/pl0_parser.hpp"
+#include "../include/pl0_ast.hpp"
 #include <stdexcept>
+
+#define AST_BEGIN(t, v) if (astBuilder_) astBuilder_->beginNode(t, v)
+#define AST_END()       if (astBuilder_) astBuilder_->endNode()
+#define AST_LEAF(t, v)  if (astBuilder_) astBuilder_->addLeaf(t, v)
 
 namespace PL0 {
 
@@ -45,6 +50,7 @@ bool Parser::parse() {
 }
 
 void Parser::program() {
+    AST_BEGIN(ASTNodeType::PROGRAM, "");
     symTable_->enterScope("main");
     codeGen_->emit(OpCode::SYSS);
 
@@ -56,12 +62,13 @@ void Parser::program() {
 
     codeGen_->emit(OpCode::SYSC);
     symTable_->exitScope();
+    AST_END();
 }
 
 void Parser::block() {
+    AST_BEGIN(ASTNodeType::BLOCK, "");
     symTable_->enterScope("block");
 
-    // 声明部分
     while (currentToken_.type == TokenType::KEYWORD) {
         if (currentToken_.value == "const") {
             constDeclaration();
@@ -74,13 +81,13 @@ void Parser::block() {
         }
     }
 
-    // 语句部分
     statement();
-
     symTable_->exitScope();
+    AST_END();
 }
 
 void Parser::constDeclaration() {
+    AST_BEGIN(ASTNodeType::CONST_DECL, "");
     match(TokenType::KEYWORD); // const
     do {
         if (currentToken_.type != TokenType::IDENTIFIER) {
@@ -88,6 +95,7 @@ void Parser::constDeclaration() {
             break;
         }
         std::string name = currentToken_.value;
+        AST_LEAF(ASTNodeType::IDENTIFIER, name);
         match(TokenType::IDENTIFIER);
 
         if (currentToken_.type != TokenType::OPERATOR || currentToken_.value != "=") {
@@ -116,17 +124,20 @@ void Parser::constDeclaration() {
         error("Expected ';' in const declaration");
     }
     match(TokenType::DELIMITER);
+    AST_END();
 }
 
 void Parser::varDeclaration() {
+    AST_BEGIN(ASTNodeType::VAR_DECL, "");
     match(TokenType::KEYWORD); // var
 
-    // 解析第一个变量
     if (currentToken_.type != TokenType::IDENTIFIER) {
         error("Expected identifier in var declaration");
+        AST_END();
         return;
     }
 
+    AST_LEAF(ASTNodeType::IDENTIFIER, currentToken_.value);
     Symbol sym;
     sym.name = currentToken_.value;
     sym.kind = SymbolKind::VARIABLE;
@@ -142,9 +153,11 @@ void Parser::varDeclaration() {
 
         if (currentToken_.type != TokenType::IDENTIFIER) {
             error("Expected identifier after ','");
+            AST_END();
             return;
         }
 
+        AST_LEAF(ASTNodeType::IDENTIFIER, currentToken_.value);
         sym.name = currentToken_.value;
         sym.address = symTable_->getCurrentLevel();
         symTable_->addSymbol(sym);
@@ -154,20 +167,25 @@ void Parser::varDeclaration() {
 
     if (currentToken_.type != TokenType::DELIMITER || currentToken_.value != ";") {
         error("Expected ';' in var declaration");
+        AST_END();
         return;
     }
     match(TokenType::DELIMITER);
+    AST_END();
 }
 
 void Parser::procedureDeclaration() {
+    AST_BEGIN(ASTNodeType::PROC_DECL, "");
     match(TokenType::KEYWORD); // procedure
 
     if (currentToken_.type != TokenType::IDENTIFIER) {
         error("Expected procedure name");
+        AST_END();
         return;
     }
 
     std::string name = currentToken_.value;
+    AST_LEAF(ASTNodeType::IDENTIFIER, name);
     Symbol sym;
     sym.name = name;
     sym.kind = SymbolKind::PROCEDURE;
@@ -190,6 +208,7 @@ void Parser::procedureDeclaration() {
     match(TokenType::DELIMITER);
 
     codeGen_->emit(OpCode::RET);
+    AST_END();
 }
 
 /**
@@ -210,6 +229,7 @@ void Parser::procedureDeclaration() {
 void Parser::statement() {
     // 处理 begin...end 块
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "begin") {
+        AST_BEGIN(ASTNodeType::BEGIN_END, "");
         match(TokenType::KEYWORD);
         statement();
         while (currentToken_.type == TokenType::DELIMITER && currentToken_.value == ";") {
@@ -223,12 +243,14 @@ void Parser::statement() {
             error("Expected 'end'");
         }
         match(TokenType::KEYWORD);
+        AST_END();
         return;
     }
 
-    // 处理赋值语句 - FIRST(id) = {id}
+    // Handle assignment statement - FIRST(id) = {id}
     if (currentToken_.type == TokenType::IDENTIFIER) {
         std::string name = currentToken_.value;
+        AST_BEGIN(ASTNodeType::ASSIGN_STMT, name);
         match(TokenType::IDENTIFIER);
 
         if (currentToken_.type != TokenType::OPERATOR || currentToken_.value != ":=") {
@@ -239,78 +261,88 @@ void Parser::statement() {
 
         expression();
         codeGen_->emit(OpCode::ASSIGN, "", "", name);
+        AST_END();
         return;
     }
 
-    // 处理 if 语句 - FIRST(if) = {if}
+    // Handle if statement - FIRST(if) = {if}
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "if") {
+        AST_BEGIN(ASTNodeType::IF_STMT, "");
         match(TokenType::KEYWORD);
         condition();
 
         if (currentToken_.type != TokenType::KEYWORD || currentToken_.value != "then") {
             error("Expected 'then'");
+            AST_END();
             return;
         }
         match(TokenType::KEYWORD);
         statement();
+        AST_END();
         return;
     }
 
-    // 处理 while 语句 - FIRST(while) = {while}
+    // Handle while statement - FIRST(while) = {while}
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "while") {
+        AST_BEGIN(ASTNodeType::WHILE_STMT, "");
         match(TokenType::KEYWORD);
         std::string startLabel = "L" + std::to_string(codeGen_->getQuadruples().size());
         condition();
 
         if (currentToken_.type != TokenType::KEYWORD || currentToken_.value != "do") {
             error("Expected 'do'");
+            AST_END();
             return;
         }
         match(TokenType::KEYWORD);
         statement();
-
         codeGen_->emit(OpCode::JUMP, startLabel);
+        AST_END();
         return;
     }
 
-    // 处理 call 语句 - FIRST(call) = {call}
+    // Handle call statement - FIRST(call) = {call}
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "call") {
+        AST_BEGIN(ASTNodeType::CALL_STMT, "");
         match(TokenType::KEYWORD);
         if (currentToken_.type != TokenType::IDENTIFIER) {
             error("Expected procedure name after 'call'");
-            return;
+            AST_END(); return;
         }
         std::string name = currentToken_.value;
+        AST_LEAF(ASTNodeType::IDENTIFIER, name);
         codeGen_->emit(OpCode::CALL, name);
         match(TokenType::IDENTIFIER);
+        AST_END();
         return;
     }
 
     // 处理 read 语句 - FIRST(read) = {read}
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "read") {
+        AST_BEGIN(ASTNodeType::READ_STMT, "");
         match(TokenType::KEYWORD);
         if (currentToken_.type != TokenType::DELIMITER || currentToken_.value != "(") {
-            error("Expected '(' after 'read'");
-            return;
+            error("Expected '(' after 'read'"); AST_END(); return;
         }
         match(TokenType::DELIMITER);
         if (currentToken_.type != TokenType::IDENTIFIER) {
-            error("Expected identifier in read statement");
-            return;
+            error("Expected identifier in read statement"); AST_END(); return;
         }
         std::string name = currentToken_.value;
+        AST_LEAF(ASTNodeType::IDENTIFIER, name);
         codeGen_->emit(OpCode::READ, "", "", name);
         match(TokenType::IDENTIFIER);
         if (currentToken_.type != TokenType::DELIMITER || currentToken_.value != ")") {
-            error("Expected ')' after read argument");
-            return;
+            error("Expected ')' after read argument"); AST_END(); return;
         }
         match(TokenType::DELIMITER);
+        AST_END();
         return;
     }
 
     // 处理 write 语句 - FIRST(write) = {write}
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "write") {
+        AST_BEGIN(ASTNodeType::WRITE_STMT, "");
         match(TokenType::KEYWORD);
         if (currentToken_.type != TokenType::DELIMITER || currentToken_.value != "(") {
             error("Expected '(' after 'write'");
@@ -326,15 +358,18 @@ void Parser::statement() {
         }
         if (currentToken_.type != TokenType::DELIMITER || currentToken_.value != ")") {
             error("Expected ')' after write arguments");
-            return;
+            AST_END(); return;
         }
         match(TokenType::DELIMITER);
+        AST_END();
         return;
     }
 }
 
 void Parser::condition() {
+    AST_BEGIN(ASTNodeType::CONDITION, "");
     if (currentToken_.type == TokenType::KEYWORD && currentToken_.value == "odd") {
+        AST_LEAF(ASTNodeType::BINOP, "odd");
         match(TokenType::KEYWORD);
         expression();
         codeGen_->emit(OpCode::ODD);
@@ -343,7 +378,7 @@ void Parser::condition() {
         std::string op = currentToken_.value;
         if (currentToken_.type != TokenType::OPERATOR) {
             error("Expected comparison operator");
-            return;
+            AST_END(); return;
         }
 
         OpCode opCode;
@@ -355,13 +390,15 @@ void Parser::condition() {
         else if (op == ">=") opCode = OpCode::GTE;
         else {
             error("Unknown comparison operator");
-            return;
+            AST_END(); return;
         }
 
+        AST_LEAF(ASTNodeType::BINOP, op);
         match(TokenType::OPERATOR);
         expression();
         codeGen_->emit(opCode);
     }
+    AST_END();
 }
 
 /**

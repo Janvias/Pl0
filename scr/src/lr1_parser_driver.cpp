@@ -1,0 +1,473 @@
+/**
+ * @file lr1_parser_driver.cpp
+ * @brief LR(1) Parser Driver — Token Mapping, Shift-Reduce Engine, Semantic Actions
+ * @details Contains the LR(1) parser constructor (which orchestrates table
+ *          construction), the shift-reduce parsing loop, token-to-terminal
+ *          mapping, and all semantic actions that generate quadruples.
+ * @author PL/0 Compiler Project
+ * @date 2026-06-09
+ */
+
+#include "../include/pl0_lr1_parser.hpp"
+#include <stack>
+#include <string>
+#include <sstream>
+
+namespace PL0 {
+
+//============================================================================
+// 构造函数 / 析构函数
+//============================================================================
+
+LR1Parser::LR1Parser()
+    : hasError_(false), tokens_(nullptr), tokenPos_(0) {
+    initGrammar();
+    computeFirstSets();
+    computeFollowSets();
+    buildCanonicalCollection();
+    buildParseTables();
+}
+
+LR1Parser::~LR1Parser() {}
+
+//============================================================================
+// Token到终结符映射
+//============================================================================
+
+LR1Terminal LR1Parser::tokenToTerminal(const Token& token) const {
+    using T = LR1Terminal;
+
+    if (token.type == TokenType::END_OF_FILE) return T::tEOF;
+
+    if (token.type == TokenType::KEYWORD) {
+        if (token.value == "const")      return T::tCONST;
+        if (token.value == "var")        return T::tVAR;
+        if (token.value == "procedure")  return T::tPROCEDURE;
+        if (token.value == "begin")      return T::tBEGIN;
+        if (token.value == "end")        return T::tEND;
+        if (token.value == "if")         return T::tIF;
+        if (token.value == "then")       return T::tTHEN;
+        if (token.value == "while")      return T::tWHILE;
+        if (token.value == "do")         return T::tDO;
+        if (token.value == "call")       return T::tCALL;
+        if (token.value == "read")       return T::tREAD;
+        if (token.value == "write")      return T::tWRITE;
+        if (token.value == "odd")        return T::tODD;
+    }
+
+    if (token.type == TokenType::IDENTIFIER) return T::tIDENT;
+    if (token.type == TokenType::NUMBER)     return T::tNUMBER;
+
+    if (token.type == TokenType::OPERATOR) {
+        if (token.value == "+")  return T::tPLUS;
+        if (token.value == "-")  return T::tMINUS;
+        if (token.value == "*")  return T::tSTAR;
+        if (token.value == "/")  return T::tSLASH;
+        if (token.value == "=")  return T::tEQ;
+        if (token.value == "#")  return T::tNEQ;
+        if (token.value == "<")  return T::tLT;
+        if (token.value == "<=") return T::tLTE;
+        if (token.value == ">")  return T::tGT;
+        if (token.value == ">=") return T::tGTE;
+        if (token.value == ":=") return T::tASSIGN;
+    }
+
+    if (token.type == TokenType::DELIMITER) {
+        if (token.value == "(") return T::tLPAREN;
+        if (token.value == ")") return T::tRPAREN;
+        if (token.value == ".") return T::tDOT;
+        if (token.value == ",") return T::tCOMMA;
+        if (token.value == ";") return T::tSEMICOLON;
+    }
+
+    return T::tEOF; // fallback
+}
+
+//============================================================================
+// 语义动作占位符
+// The actual semantic actions are inline in the parse() method's reduce
+// handler. This method exists for documentation and potential external use.
+//============================================================================
+
+void LR1Parser::executeSemanticAction(int productionId) {
+    (void)productionId; // See parse() for actual implementation
+}
+
+//============================================================================
+// 解析驱动器 — 移进-归约算法
+//============================================================================
+
+bool LR1Parser::parse(const std::vector<Token>& tokens) {
+    using T = LR1Terminal;
+    using N = LR1NonTerminal;
+
+    tokens_ = &tokens;
+    tokenPos_ = 0;
+    hasError_ = false;
+    errorMessage_ = "";
+    quadruples_.clear();
+
+    // Emit program start marker (matching LL(1) behavior)
+    symTable_.enterScope("main");
+    quadruples_.push_back(Quadruple(
+        OpCode::SYSS, "", "", "",
+        static_cast<int>(quadruples_.size()) + 100));
+
+    // ---- Value stack: tracks semantic values alongside grammar symbols ----
+    struct StackEntry {
+        LR1Symbol symbol;
+        std::string value;       // For identifiers, numbers, operators
+        std::string tempName;    // For expression temporaries (T1, T2, ...)
+    };
+
+    std::vector<StackEntry> valueStack;
+    std::vector<int> stateStack;
+    stateStack.push_back(0); // Start state
+
+    // ---- Lambda helpers ----
+    auto currentTerminal = [&]() -> T {
+        if (tokenPos_ < tokens.size())
+            return tokenToTerminal(tokens[tokenPos_]);
+        return T::tEOF;
+    };
+
+    auto currentValue = [&]() -> std::string {
+        if (tokenPos_ < tokens.size())
+            return tokens[tokenPos_].value;
+        return "";
+    };
+
+    auto advanceToken = [&]() {
+        if (tokenPos_ < tokens.size()) tokenPos_++;
+    };
+
+    int tempCounter = 0;
+    auto newTemp = [&]() -> std::string {
+        return "T" + std::to_string(++tempCounter);
+    };
+
+    bool accepted = false;
+
+    // ---- Main parsing loop ----
+    while (!accepted) {
+        int state = stateStack.back();
+        T lookahead = currentTerminal();
+
+        auto actionKey = std::make_pair(state, lookahead);
+        auto actionIt = actionTable_.find(actionKey);
+
+        if (actionIt == actionTable_.end()) {
+            int lineNum = (tokenPos_ < tokens.size())
+                              ? tokens[tokenPos_].line : 0;
+            hasError_ = true;
+            errorMessage_ = "(LR1 Syntax Error, Line: " +
+                            std::to_string(lineNum) +
+                            ") Unexpected token '" + currentValue() +
+                            "', state " + std::to_string(state);
+            return false;
+        }
+
+        const LRAction& action = actionIt->second;
+
+        switch (action.type) {
+
+        // ================================================================
+        // SHIFT
+        // ================================================================
+        case LRActionType::SHIFT: {
+            StackEntry entry;
+            entry.symbol = LR1Symbol(lookahead);
+            entry.value = currentValue();
+            valueStack.push_back(entry);
+            stateStack.push_back(action.value);
+            advanceToken();
+            break;
+        }
+
+        // ================================================================
+        // REDUCE
+        // ================================================================
+        case LRActionType::REDUCE: {
+            int prodId = action.value;
+            const auto& prod = productions_[prodId];
+
+            // Epsilon productions: nothing to pop, no semantic action needed
+            if (prodId == 6  || // DL -> epsilon
+                prodId == 9  || // CL -> epsilon
+                prodId == 12 || // VL -> epsilon
+                prodId == 17 || // L  -> epsilon
+                prodId == 24 || // A  -> epsilon
+                prodId == 25 || // S  -> epsilon
+                prodId == 38 || // ET -> epsilon
+                prodId == 42) { // TT -> epsilon
+                // No popping, just push the result non-terminal
+                StackEntry result;
+                result.symbol = LR1Symbol(prod.lhs);
+                valueStack.push_back(result);
+            } else {
+                // Pop RHS symbols from both stacks
+                size_t popCount = prod.rhs.size();
+                std::vector<StackEntry> rhsValues;
+                for (size_t i = 0; i < popCount; i++) {
+                    rhsValues.insert(rhsValues.begin(), valueStack.back());
+                    valueStack.pop_back();
+                    stateStack.pop_back();
+                }
+
+                // Execute semantic action
+                StackEntry result;
+                result.symbol = LR1Symbol(prod.lhs);
+
+                switch (prodId) {
+
+                // ---- Declarations ----
+                case 7:   // C -> const I = N CL ;
+                case 8: { // CL -> , I = N CL
+                    std::string name = rhsValues[1].value;
+                    int val = std::stoi(rhsValues[3].value);
+                    Symbol sym;
+                    sym.name = name;
+                    sym.kind = SymbolKind::CONSTANT;
+                    sym.value = val;
+                    sym.level = symTable_.getCurrentLevel();
+                    symTable_.addSymbol(sym);
+                    break;
+                }
+
+                case 10:  // V -> var I VL ;
+                case 11: { // VL -> , I VL
+                    std::string name = rhsValues[1].value;
+                    Symbol sym;
+                    sym.name = name;
+                    sym.kind = SymbolKind::VARIABLE;
+                    sym.level = symTable_.getCurrentLevel();
+                    sym.address = symTable_.getCurrentLevel();
+                    symTable_.addSymbol(sym);
+                    break;
+                }
+
+                case 13: { // PR -> procedure I ; B ;
+                    std::string name = rhsValues[1].value;
+                    Symbol sym;
+                    sym.name = name;
+                    sym.kind = SymbolKind::PROCEDURE;
+                    sym.level = symTable_.getCurrentLevel();
+                    sym.address = static_cast<int>(quadruples_.size()) + 100;
+                    symTable_.addSymbol(sym);
+                    break;
+                }
+
+                // ---- Statements ----
+                case 14: { // S -> I := E
+                    std::string name = rhsValues[0].value;
+                    std::string temp = rhsValues[2].tempName.empty()
+                                           ? rhsValues[2].value
+                                           : rhsValues[2].tempName;
+                    quadruples_.push_back(Quadruple(
+                        OpCode::ASSIGN, temp, "", name,
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                }
+
+                case 20: { // S -> call I
+                    quadruples_.push_back(Quadruple(
+                        OpCode::CALL, rhsValues[1].value, "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                }
+
+                case 21: { // S -> read ( I )
+                    quadruples_.push_back(Quadruple(
+                        OpCode::READ, "", "", rhsValues[2].value,
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                }
+
+                case 22: // S -> write ( E A ) — first argument
+                    quadruples_.push_back(Quadruple(
+                        OpCode::WRITE, "", "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+
+                case 23: // A -> , E A  (additional write argument)
+                    quadruples_.push_back(Quadruple(
+                        OpCode::WRITE, "", "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+
+                // ---- Conditions ----
+                case 26: // CO -> odd E
+                    quadruples_.push_back(Quadruple(
+                        OpCode::ODD, "", "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                case 27: // CO -> E = E
+                    quadruples_.push_back(Quadruple(
+                        OpCode::EQ, "", "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                case 28: // CO -> E # E
+                    quadruples_.push_back(Quadruple(
+                        OpCode::NEQ, "", "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                case 29: // CO -> E < E
+                    quadruples_.push_back(Quadruple(
+                        OpCode::LT, "", "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                case 30: // CO -> E <= E
+                    quadruples_.push_back(Quadruple(
+                        OpCode::LTE, "", "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                case 31: // CO -> E > E
+                    quadruples_.push_back(Quadruple(
+                        OpCode::GT, "", "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                case 32: // CO -> E >= E
+                    quadruples_.push_back(Quadruple(
+                        OpCode::GTE, "", "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+
+                // ---- Expressions (right-recursive: need left operand from stack) ----
+                case 33: // E -> + T ET (unary plus — pass through)
+                    result.tempName = rhsValues[1].tempName.empty()
+                                          ? rhsValues[1].value
+                                          : rhsValues[1].tempName;
+                    break;
+
+                case 34: { // E -> - T ET (unary minus)
+                    std::string tVal = rhsValues[1].tempName.empty()
+                                           ? rhsValues[1].value
+                                           : rhsValues[1].tempName;
+                    result.tempName = newTemp();
+                    quadruples_.push_back(Quadruple(
+                        OpCode::SUB, "0", tVal, result.tempName,
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                }
+
+                case 35: // E -> T ET
+                case 39: // T -> F TT
+                    if (rhsValues[1].tempName.empty())
+                        result.tempName = rhsValues[0].tempName.empty()
+                                              ? rhsValues[0].value
+                                              : rhsValues[0].tempName;
+                    else
+                        result.tempName = rhsValues[1].tempName;
+                    break;
+
+                case 36: // ET -> + T ET (binary +)
+                case 37: // ET -> - T ET (binary -)
+                case 40: // TT -> * F TT
+                case 41: { // TT -> / F TT
+                    // Left operand is on value stack just below popped RHS
+                    std::string leftVal = valueStack.back().tempName.empty()
+                                          ? valueStack.back().value
+                                          : valueStack.back().tempName;
+                    std::string rightVal = rhsValues[1].tempName.empty()
+                                           ? rhsValues[1].value
+                                           : rhsValues[1].tempName;
+                    result.tempName = newTemp();
+                    OpCode op = OpCode::ADD;
+                    if (prodId == 37) op = OpCode::SUB;
+                    else if (prodId == 40) op = OpCode::MUL;
+                    else if (prodId == 41) op = OpCode::DIV;
+                    quadruples_.push_back(Quadruple(
+                        op, leftVal, rightVal, result.tempName,
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                }
+
+                case 43: { // F -> I
+                    std::string name = rhsValues[0].value;
+                    Symbol* sym = symTable_.lookup(name);
+                    if (sym && sym->kind == SymbolKind::CONSTANT)
+                        result.value = std::to_string(sym->value);
+                    else
+                        result.tempName = name;
+                    break;
+                }
+
+                case 44: // F -> N
+                    result.value = rhsValues[0].value;
+                    break;
+
+                case 45: // F -> ( E )
+                    result.tempName = rhsValues[1].tempName.empty()
+                                          ? rhsValues[1].value
+                                          : rhsValues[1].tempName;
+                    break;
+
+                // Program/Block (no semantic action needed)
+                case 1:  // P -> B .
+                case 2:  // B -> DL S
+                case 3:  // DL -> DL C
+                case 4:  // DL -> DL V
+                case 5:  // DL -> DL PR
+                case 15: // S -> begin S L end
+                case 16: // L -> ; S L
+                case 18: // S -> if CO then S
+                case 19: // S -> while CO do S
+                    break;
+
+                default:
+                    break;
+                }
+
+                valueStack.push_back(result);
+            }
+
+            // After reduction, look up GOTO
+            int curState = stateStack.back();
+            N lhs = prod.lhs;
+            auto gotoKey = std::make_pair(curState, lhs);
+            auto gotoIt = gotoTable_.find(gotoKey);
+            if (gotoIt != gotoTable_.end()) {
+                stateStack.push_back(gotoIt->second);
+            } else {
+                hasError_ = true;
+                std::ostringstream oss;
+                oss << "(LR1 Internal Error) No GOTO for state "
+                    << curState << ", non-terminal "
+                    << nonTerminalToString(lhs);
+                errorMessage_ = oss.str();
+                return false;
+            }
+            break;
+        }
+
+        // ================================================================
+        // ACCEPT
+        // ================================================================
+        case LRActionType::ACCEPT:
+            quadruples_.push_back(Quadruple(
+                OpCode::SYSC, "", "", "",
+                static_cast<int>(quadruples_.size()) + 100));
+            symTable_.exitScope();
+            accepted = true;
+            break;
+
+        // ================================================================
+        // ERROR
+        // ================================================================
+        case LRActionType::ERROR:
+        default: {
+            int lineNum = (tokenPos_ < tokens.size())
+                              ? tokens[tokenPos_].line : 0;
+            hasError_ = true;
+            errorMessage_ = "(LR1 Syntax Error, Line: " +
+                            std::to_string(lineNum) +
+                            ") at token '" + currentValue() + "'";
+            return false;
+        }
+        }
+    }
+
+    return !hasError_;
+}
+
+} // namespace PL0
