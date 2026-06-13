@@ -1,6 +1,9 @@
 /**
  * @file codegen.cpp
- * @brief Code Generator Implementation
+ * @brief 代码生成器实现
+ * @details 实现四元式中间代码的生成、跳转指令发射和回填
+ * @author PL/0 Compiler Project
+ * @date 2026-06-11
  */
 
 #include "../include/pl0_codegen.hpp"
@@ -15,17 +18,29 @@ CodeGenerator::CodeGenerator() : nextIndex_(START_ADDRESS), startAddress_(START_
 
 CodeGenerator::~CodeGenerator() {}
 
+//============================================================================
+// 发射四元式
+//============================================================================
+
 void CodeGenerator::emit(OpCode op, const std::string& arg1,
                          const std::string& arg2, const std::string& result) {
     Quadruple q(op, arg1, arg2, result, nextIndex_++);
     quadruples_.push_back(q);
 }
 
+//============================================================================
+// 发射跳转指令
+//============================================================================
+
 int CodeGenerator::emitJump(OpCode op, const std::string& target) {
     Quadruple q(op, target, "", "", nextIndex_++);
     quadruples_.push_back(q);
     return nextIndex_ - 1;
 }
+
+//============================================================================
+// 回填跳转目标
+//============================================================================
 
 void CodeGenerator::backpatch(int index, const std::string& target) {
     int internalIndex = index - startAddress_;
@@ -34,9 +49,17 @@ void CodeGenerator::backpatch(int index, const std::string& target) {
     }
 }
 
+//============================================================================
+// 获取四元式
+//============================================================================
+
 Quadruple& CodeGenerator::getQuadruple(int index) {
     return quadruples_[index - startAddress_];
 }
+
+//============================================================================
+// 操作码转字符串
+//============================================================================
 
 std::string CodeGenerator::opCodeToString(OpCode op) const {
     switch (op) {
@@ -65,6 +88,10 @@ std::string CodeGenerator::opCodeToString(OpCode op) const {
     }
 }
 
+//============================================================================
+// 输出四元式列表
+//============================================================================
+
 void CodeGenerator::print(std::ostream& os) const {
     os << "\n===== QUADRUPLES =====\n";
     for (const auto& q : quadruples_) {
@@ -72,6 +99,10 @@ void CodeGenerator::print(std::ostream& os) const {
            << "," << q.arg1 << "," << q.arg2 << "," << q.result << ")\n";
     }
 }
+
+//============================================================================
+// 清空四元式列表
+//============================================================================
 
 void CodeGenerator::clear() {
     quadruples_.clear();

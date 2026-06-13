@@ -1,8 +1,8 @@
 /**
  * @file pl0_ast.hpp
- * @brief PL/0 Abstract Syntax Tree — Node types, ASTBuilder, DOT generator
- * @details Builds an AST during LL(1) recursive-descent parsing and
- *          generates Graphviz DOT format for visualization.
+ * @brief PL/0抽象语法树 — 节点类型、ASTBuilder、DOT生成器
+ * @details 在LL(1)递归下降解析过程中构建AST，
+ *          并生成Graphviz DOT格式用于可视化
  * @author PL/0 Compiler Project
  * @date 2026-06-11
  */
@@ -19,7 +19,7 @@
 namespace PL0 {
 
 //============================================================================
-// AST Node Types
+// AST节点类型
 //============================================================================
 
 enum class ASTNodeType {
@@ -44,17 +44,18 @@ enum class ASTNodeType {
 };
 
 //============================================================================
-// AST Node
+// AST节点结构
 //============================================================================
 
 struct ASTNode {
-    ASTNodeType type;
-    std::string value;                    // 标识符名 / 数字值 / 操作符
-    std::vector<std::unique_ptr<ASTNode>> children;
+    ASTNodeType type;                              // 节点类型
+    std::string value;                             // 标识符名/数字值/操作符
+    std::vector<std::unique_ptr<ASTNode>> children;  // 子节点列表
 
     ASTNode(ASTNodeType t) : type(t) {}
     ASTNode(ASTNodeType t, const std::string& v) : type(t), value(v) {}
 
+    // 添加子节点（无值）
     ASTNode* addChild(ASTNodeType t) {
         auto node = std::make_unique<ASTNode>(t);
         ASTNode* ptr = node.get();
@@ -62,6 +63,7 @@ struct ASTNode {
         return ptr;
     }
 
+    // 添加子节点（带值）
     ASTNode* addChild(ASTNodeType t, const std::string& v) {
         auto node = std::make_unique<ASTNode>(t, v);
         ASTNode* ptr = node.get();
@@ -71,7 +73,7 @@ struct ASTNode {
 };
 
 //============================================================================
-// AST Builder
+// AST构建器
 //============================================================================
 
 class ASTBuilder {
@@ -79,31 +81,31 @@ public:
     ASTBuilder();
     ~ASTBuilder();
 
-    // Reset for a new parse
+    // 重置（用于新的解析）
     void reset();
 
-    // Root access
+    // 根节点访问
     ASTNode* root() { return root_.get(); }
 
-    // Stack-based node construction (matches recursive-descent nesting)
-    void beginNode(ASTNodeType type, const std::string& value = "");
-    void endNode();
-    void addLeaf(ASTNodeType type, const std::string& value = "");
+    // 基于栈的节点构造（匹配递归下降嵌套）
+    void beginNode(ASTNodeType type, const std::string& value = "");  // 开始节点
+    void endNode();                                                   // 结束节点
+    void addLeaf(ASTNodeType type, const std::string& value = "");    // 添加叶子节点
 
-    // DOT generation for Graphviz
+    // DOT生成（用于Graphviz）
     std::string generateDOT(const std::string& graphName = "AST") const;
 
-    // Textual tree dump
+    // 文本树输出
     void printTree(std::ostream& os) const;
     void printTree(std::ostream& os, const ASTNode* node, int indent) const;
 
 private:
-    std::unique_ptr<ASTNode> root_;
-    std::vector<ASTNode*> stack_;  // current nesting stack
+    std::unique_ptr<ASTNode> root_;       // 根节点
+    std::vector<ASTNode*> stack_;         // 当前嵌套栈
 
-    static std::string nodeTypeToString(ASTNodeType t);
+    static std::string nodeTypeToString(ASTNodeType t);  // 节点类型转字符串
     void generateDOTNode(const ASTNode* node, int& id,
-                         std::ostringstream& ss) const;
+                         std::ostringstream& ss) const;  // 生成DOT节点
 };
 
 } // namespace PL0

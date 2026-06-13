@@ -1,8 +1,10 @@
 /**
  * @file pl0_regex.h
- * @brief PL/0 Regular Expression Definitions
- * @details Defines regular expression patterns for PL/0 lexical elements
- *          used by the DFA-based lexer validation.
+ * @brief PL/0正则表达式定义
+ * @details 定义PL/0词法元素的正则表达式模式，
+ *          用于DFA词法分析器验证
+ * @author PL/0 Compiler Project
+ * @date 2026-06-11
  */
 
 #ifndef PL0_REGEX_H
@@ -11,6 +13,10 @@
 #include <string>
 
 namespace PL0Regex {
+
+//============================================================================
+// 正则表达式模式定义
+//============================================================================
 
 // 标识符: 字母开头，后跟字母或数字（最多8个字符）
 static const std::string REG_IDENT =

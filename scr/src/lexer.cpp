@@ -1,6 +1,9 @@
 /**
  * @file lexer.cpp
- * @brief Lexer Implementation
+ * @brief 词法分析器实现
+ * @details 实现PL/0源代码的词法分析，包括Token识别、DFA验证和错误处理
+ * @author PL/0 Compiler Project
+ * @date 2026-06-11
  */
 
 #include "../include/pl0_lexer.hpp"
@@ -44,6 +47,10 @@ Lexer::~Lexer() {
     }
 }
 
+//============================================================================
+// 读取下一个字符
+//============================================================================
+
 void Lexer::readChar() {
     currentChar_ = static_cast<char>(file_.get());
     if (currentChar_ == '\n') {
@@ -51,11 +58,23 @@ void Lexer::readChar() {
     }
 }
 
+//============================================================================
+// 跳过空白字符
+//============================================================================
+
 void Lexer::skipWhitespace() {
-    while (!file_.eof() && std::isspace(currentChar_)) {
+    // MinGW workaround: file_.eof()可能不可靠触发；
+    // 使用显式EOF字符检测作为辅助保护
+    while (!file_.eof() &&
+           currentChar_ != static_cast<char>(std::char_traits<char>::eof()) &&
+           std::isspace(static_cast<unsigned char>(currentChar_))) {
         readChar();
     }
 }
+
+//============================================================================
+// 分析标识符
+//============================================================================
 
 Token Lexer::analyzeIdentifier() {
     std::string value;
@@ -79,6 +98,10 @@ Token Lexer::analyzeIdentifier() {
 
     return Token(TokenType::IDENTIFIER, value, currentLine_);
 }
+
+//============================================================================
+// 分析数字
+//============================================================================
 
 Token Lexer::analyzeNumber() {
     std::string value;
@@ -170,7 +193,9 @@ Token Lexer::getNextToken() {
 
     skipWhitespace();
 
-    if (file_.eof()) {
+    // MinGW workaround: also check for real EOF character
+    if (file_.eof() ||
+        currentChar_ == static_cast<char>(std::char_traits<char>::eof())) {
         return Token(TokenType::END_OF_FILE, "EOF", currentLine_);
     }
 
@@ -189,8 +214,13 @@ Token Lexer::getNextToken() {
                currentChar_ == ')' || currentChar_ == ':') {
         token = analyzeDelimiter();
     } else {
+        // 错误恢复：记录非法字符，跳过并继续词法分析
+        char illegalChar = currentChar_;
+        recoverFromError(illegalChar);
         readChar();
-        token = Token(TokenType::ERROR, std::string(1, currentChar_), currentLine_);
+        token = Token(TokenType::ERROR,
+                      "Illegal character: '" + std::string(1, illegalChar) + "'",
+                      currentLine_);
     }
 
     tokenBuffer_.push_back(token);
@@ -229,6 +259,16 @@ std::vector<Token> Lexer::analyze() {
 
 bool Lexer::isKeyword(const std::string& str) const {
     return keywords_.find(str) != keywords_.end();
+}
+
+void Lexer::recoverFromError(char illegalChar) {
+    // 记录错误token到错误列表
+    std::string msg = "Illegal character: '" + std::string(1, illegalChar) + "'";
+    lexErrors_.push_back(Token(TokenType::ERROR, msg, currentLine_));
+
+    // 跳过当前非法字符已在getNextToken()中处理（readChar调用后）
+    // 错误恢复策略：仅跳过单个非法字符，继续正常词法分析
+    // 这足以处理绝大多数词法错误（如输入了@、$等符号）
 }
 
 void Lexer::initDFA() {

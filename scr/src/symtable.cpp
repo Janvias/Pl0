@@ -1,6 +1,9 @@
 /**
  * @file symtable.cpp
- * @brief Symbol Table Implementation
+ * @brief 符号表实现
+ * @details 实现带作用域管理的符号表，支持符号的添加、查找和作用域管理
+ * @author PL/0 Compiler Project
+ * @date 2026-06-11
  */
 
 #include "../include/pl0_symtable.hpp"
@@ -19,17 +22,29 @@ SymbolTable::~SymbolTable() {
     // 析构时自动清理
 }
 
+//============================================================================
+// 进入新作用域
+//============================================================================
+
 void SymbolTable::enterScope(const std::string& name) {
     Scope scope;
     scope.name = name;
     scopeStack_.push_back(scope);
 }
 
+//============================================================================
+// 退出当前作用域
+//============================================================================
+
 void SymbolTable::exitScope() {
     if (scopeStack_.size() > 1) {
         scopeStack_.pop_back();
     }
 }
+
+//============================================================================
+// 添加符号到当前作用域
+//============================================================================
 
 bool SymbolTable::addSymbol(const Symbol& symbol) {
     if (scopeStack_.empty()) return false;
@@ -41,6 +56,10 @@ bool SymbolTable::addSymbol(const Symbol& symbol) {
     return true;
 }
 
+//============================================================================
+// 跨作用域查找符号
+//============================================================================
+
 Symbol* SymbolTable::lookup(const std::string& name) {
     for (auto it = scopeStack_.rbegin(); it != scopeStack_.rend(); ++it) {
         auto found = it->symbols.find(name);
@@ -50,6 +69,10 @@ Symbol* SymbolTable::lookup(const std::string& name) {
     }
     return nullptr;
 }
+
+//============================================================================
+// 在当前作用域查找符号
+//============================================================================
 
 Symbol* SymbolTable::lookupInCurrentScope(const std::string& name) {
     if (scopeStack_.empty()) return nullptr;
@@ -61,10 +84,18 @@ Symbol* SymbolTable::lookupInCurrentScope(const std::string& name) {
     return nullptr;
 }
 
+//============================================================================
+// 生成新临时变量名
+//============================================================================
+
 std::string SymbolTable::getNewTemp() {
     tempCount_++;
     return "T" + std::to_string(tempCount_);
 }
+
+//============================================================================
+// 输出符号表
+//============================================================================
 
 void SymbolTable::print(std::ostream& os) const {
     os << "\n===== SYMBOL TABLE =====\n";
@@ -95,6 +126,10 @@ void SymbolTable::print(std::ostream& os) const {
         }
     }
 }
+
+//============================================================================
+// 清空符号表
+//============================================================================
 
 void SymbolTable::clear() {
     scopeStack_.clear();

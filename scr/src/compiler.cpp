@@ -6,6 +6,10 @@
  */
 
 #include "../include/pl0_compiler.hpp"
+#include "../dfa/regex_parser.h"
+#include "../dfa/nfa.h"
+#include "../dfa/dfa.h"
+#include "../dfa/regex_access.h"
 #include <ctime>
 
 namespace PL0 {
@@ -18,7 +22,16 @@ Compiler::Compiler()
     : parserMode_(ParserMode::DUAL), verbose_(false), success_(false),
       astEnabled_(false), suggestEnabled_(false), normalizeEnabled_(false) {}
 
-Compiler::~Compiler() {}
+Compiler::~Compiler() {
+    if (cachedIdentDFA_) {
+        destroy_dfa(cachedIdentDFA_);
+        cachedIdentDFA_ = nullptr;
+    }
+    if (cachedNumberDFA_) {
+        destroy_dfa(cachedNumberDFA_);
+        cachedNumberDFA_ = nullptr;
+    }
+}
 
 bool Compiler::compile(const std::string& inputFile) {
     inputFile_ = inputFile;
@@ -479,6 +492,120 @@ void Compiler::printErrorSuggestions(std::ostream& os) {
     if (!errorMessage_.empty()) {
         errorSuggestor_.printSuggestions(os, errorMessage_);
     }
+}
+
+//============================================================================
+// DFA Visualization Dumps
+//============================================================================
+
+void Compiler::ensureRealDFAs() const {
+    if (!cachedIdentDFA_) {
+        cachedIdentDFA_ = create_dfa_from_regex(get_regex_ident());
+    }
+    if (!cachedNumberDFA_) {
+        cachedNumberDFA_ = create_dfa_from_regex(get_regex_number());
+    }
+}
+
+bool Compiler::dumpNFA(const std::string& filename) {
+    // Build NFA from identifier regex
+    std::string regex = RegexParser::expandQuantifiers(get_regex_ident());
+    std::string withConcat = RegexParser::insertConcat(regex);
+    std::string postfix = RegexParser::shuntingYard(withConcat);
+
+    NFA* nfa = NFA::thompsonConstruction(postfix);
+    if (!nfa) return false;
+
+    std::string dot = Visualizer::generateNFADOT(nfa, "PL0_Identifier_NFA");
+    nfa->states.clear();
+    delete nfa;
+
+    return Visualizer::writeToFile(filename, dot);
+}
+
+bool Compiler::dumpDFA(const std::string& filename) {
+    // Build DFA (not minimized) from identifier regex
+    std::string regex = RegexParser::expandQuantifiers(get_regex_ident());
+    std::string withConcat = RegexParser::insertConcat(regex);
+    std::string postfix = RegexParser::shuntingYard(withConcat);
+
+    NFA* nfa = NFA::thompsonConstruction(postfix);
+    if (!nfa) return false;
+
+    DFA* dfa = DFA::nfaToDFA(nfa);
+    nfa->states.clear();
+    delete nfa;
+
+    if (!dfa) return false;
+
+    std::string dot = Visualizer::generateDFADOT(dfa, "PL0_Identifier_DFA");
+    delete dfa;
+
+    return Visualizer::writeToFile(filename, dot);
+}
+
+bool Compiler::dumpMinDFA(const std::string& filename) {
+    ensureRealDFAs();
+
+    // Use the cached minimized DFA for identifier
+    const DFA* minDFA = static_cast<const DFA*>(cachedIdentDFA_);
+    if (!minDFA) return false;
+
+    std::string dot = Visualizer::generateDFADOT(minDFA, "PL0_Identifier_MinDFA");
+    return Visualizer::writeToFile(filename, dot);
+}
+
+bool Compiler::dumpClassification(const std::string& filename) {
+    // Get tokens: use lexer_ if available, otherwise do a fresh token extraction
+    std::vector<Token> tokens;
+    if (lexer_ && !lexer_->getTokenBuffer().empty()) {
+        tokens = lexer_->getTokenBuffer();
+    } else {
+        // Extract tokens from source file on demand
+        Lexer tempLexer(inputFile_);
+        if (tempLexer.hasError()) {
+            std::cerr << "Cannot open file for classification dump.\n";
+            return false;
+        }
+        tokens = tempLexer.analyze();
+    }
+
+    std::string dot = Visualizer::generateClassificationDOT(tokens);
+    return Visualizer::writeToFile(filename, dot);
+}
+
+bool Compiler::dumpReport(const std::string& filename) {
+    // Get tokens: use lexer_ if available, otherwise do a fresh token extraction
+    std::vector<Token> tokens;
+    if (lexer_ && !lexer_->getTokenBuffer().empty()) {
+        tokens = lexer_->getTokenBuffer();
+    } else {
+        Lexer tempLexer(inputFile_);
+        if (tempLexer.hasError()) {
+            std::cerr << "Cannot open file for report dump.\n";
+            return false;
+        }
+        tokens = tempLexer.analyze();
+    }
+
+    LexerStats stats = Visualizer::computeStats(tokens);
+    std::string report = Visualizer::generateAnalysisReport(tokens, stats, inputFile_);
+    return Visualizer::writeToFile(filename, report);
+}
+
+bool Compiler::dumpAll(const std::string& prefix) {
+    bool ok = true;
+    ok = dumpNFA(prefix + "_nfa.dot") && ok;
+    ok = dumpDFA(prefix + "_dfa.dot") && ok;
+    ok = dumpMinDFA(prefix + "_min_dfa.dot") && ok;
+    ok = dumpClassification(prefix + "_classify.dot") && ok;
+    ok = dumpReport(prefix + "_report.txt") && ok;
+
+    // Also generate the recognition flowchart
+    std::string flowchart = Visualizer::generateRecognitionFlowchartDOT();
+    ok = Visualizer::writeToFile(prefix + "_flowchart.dot", flowchart) && ok;
+
+    return ok;
 }
 
 } // namespace PL0

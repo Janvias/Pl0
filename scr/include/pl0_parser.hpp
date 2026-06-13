@@ -1,9 +1,9 @@
 /**
  * @file pl0_parser.hpp
- * @brief PL/0 Compiler Parser Class
- * @details This class implements recursive descent parsing for PL/0 grammar.
- *          It processes tokens from the lexer, performs syntax analysis,
- *          builds the symbol table, and generates intermediate code.
+ * @brief PL/0编译器语法分析器类
+ * @details 本类实现PL/0文法的递归下降解析，
+ *          处理词法分析器产生的Token，执行语法分析，
+ *          构建符号表，并生成中间代码
  * @author PL/0 Compiler Project
  * @date 2026-06-06
  */
@@ -18,55 +18,55 @@
 
 namespace PL0 {
 
-// Forward declaration
+// 前向声明
 class ASTBuilder;
 
 /**
  * @class Parser
- * @brief Recursive descent parser for PL/0 grammar
- * @details Implements LL(1) recursive descent parsing. Optionally builds
- *          an AST via an injected ASTBuilder for visualization.
+ * @brief PL/0文法递归下降解析器
+ * @details 实现LL(1)递归下降解析，
+ *          可选地通过注入的ASTBuilder构建AST用于可视化
  */
 class Parser {
 public:
     Parser(Lexer* lexer, SymbolTable* symTable, CodeGenerator* codeGen);
     ~Parser();
 
-    // Parse
-    bool parse();
+    // 解析
+    bool parse();  // 执行语法分析
 
-    // AST building (optional — set before calling parse())
+    // AST构建（可选 — 在调用parse()之前设置）
     void setASTBuilder(ASTBuilder* ast) { astBuilder_ = ast; }
 
-    // Error handling
+    // 错误处理
     bool hasError() const { return hasError_; }
     const std::string& getErrorMessage() const { return errorMessage_; }
 
 private:
-    Lexer* lexer_;
-    SymbolTable* symTable_;
-    CodeGenerator* codeGen_;
-    ASTBuilder* astBuilder_ = nullptr;
-    Token currentToken_;
-    bool hasError_;
-    std::string errorMessage_;
+    Lexer* lexer_;           // 词法分析器
+    SymbolTable* symTable_;  // 符号表
+    CodeGenerator* codeGen_; // 代码生成器
+    ASTBuilder* astBuilder_ = nullptr;  // AST构建器（可选）
+    Token currentToken_;     // 当前Token
+    bool hasError_;          // 是否有错误
+    std::string errorMessage_;  // 错误消息
 
-    // Recursive descent functions
-    void program();
-    void block();
-    void constDeclaration();
-    void varDeclaration();
-    void procedureDeclaration();
-    void statement();
-    void condition();
-    void expression();
-    void term();
-    void factor();
+    // 递归下降函数
+    void program();          // 程序
+    void block();            // 分程序
+    void constDeclaration(); // 常量声明
+    void varDeclaration();   // 变量声明
+    void procedureDeclaration();  // 过程声明
+    void statement();        // 语句
+    void condition();        // 条件
+    void expression();       // 表达式
+    void term();             // 项
+    void factor();           // 因子
 
-    // Helpers
-    void match(TokenType expected);
-    void error(const std::string& message);
-    void sync();
+    // 辅助函数
+    void match(TokenType expected);  // 匹配期望的Token类型
+    void error(const std::string& message);  // 报告错误
+    void sync();  // 错误同步
 };
 
 } // namespace PL0

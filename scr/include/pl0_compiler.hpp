@@ -21,6 +21,7 @@
 #include "pl0_ast.hpp"
 #include "pl0_error_suggestor.hpp"
 #include "pl0_grammar_normalizer.hpp"
+#include "pl0_visualizer.hpp"
 
 namespace PL0 {
 
@@ -66,6 +67,14 @@ public:
     bool writeCache(const std::string& filename);
     bool writeASTDOT(const std::string& filename);
 
+    // DFA visualization dumps (build real DFAs on demand)
+    bool dumpNFA(const std::string& filename);
+    bool dumpDFA(const std::string& filename);
+    bool dumpMinDFA(const std::string& filename);
+    bool dumpClassification(const std::string& filename);
+    bool dumpReport(const std::string& filename);
+    bool dumpAll(const std::string& prefix);
+
     // Status
     bool isSuccess() const { return success_; }
     const std::string& getErrorMessage() const { return errorMessage_; }
@@ -100,6 +109,13 @@ private:
     void printRecognitionFlowchart(std::ostream& os);
     void printValidationResult(std::ostream& os);
     void printErrorSuggestions(std::ostream& os);
+
+    // Build real DFA pipeline on demand (one-time, cached)
+    void ensureRealDFAs() const;
+
+    // Mutable cache for visualization-only DFA instances
+    mutable void* cachedIdentDFA_ = nullptr;
+    mutable void* cachedNumberDFA_ = nullptr;
 };
 
 } // namespace PL0
