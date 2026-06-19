@@ -1,11 +1,9 @@
 /**
  * @file pl0_lr1_parser.hpp
- * @brief PL/0 LR(1) Parser Class
- * @details This class implements a canonical LR(1) shift-reduce parser for
- *          the PL/0 grammar. It constructs LR(1) item sets, builds ACTION
- *          and GOTO tables, and performs bottom-up syntax analysis.
- *          Used alongside the LL(1) recursive descent parser for dual
- *          validation of PL/0 programs.
+ * @brief PL/0 LR(1)解析器类
+ * @details 本类实现PL/0语法的规范LR(1)移进-归约解析器。
+ *          构建LR(1)项目集族、ACTION表和GOTO表，执行自底向上的语法分析。
+ *          与LL(1)递归下降解析器配合使用，实现PL/0程序的双解析器验证。
  * @author PL/0 Compiler Project
  * @date 2026-06-09
  */
@@ -25,17 +23,17 @@
 namespace PL0 {
 
 //============================================================================
-// LR(1) Parser Terminal Symbols
+// LR(1)解析器终结符
 //============================================================================
 
 enum class LR1Terminal {
-    tIDENT,          // identifier
-    tNUMBER,         // number literal
+    tIDENT,          // 标识符
+    tNUMBER,         // 数字常量
     tPLUS,           // +
     tMINUS,          // -
     tSTAR,           // *
     tSLASH,          // /
-    tEQ,             // = (relop)
+    tEQ,             // = (关系运算符)
     tNEQ,            // #
     tLT,             // <
     tLTE,            // <=
@@ -47,68 +45,70 @@ enum class LR1Terminal {
     tDOT,            // .
     tCOMMA,          // ,
     tSEMICOLON,      // ;
-    tCONST,          // const keyword
-    tVAR,            // var keyword
-    tPROCEDURE,      // procedure keyword
-    tBEGIN,          // begin keyword
-    tEND,            // end keyword
-    tIF,             // if keyword
-    tTHEN,           // then keyword
-    tWHILE,          // while keyword
-    tDO,             // do keyword
-    tCALL,           // call keyword
-    tREAD,           // read keyword
-    tWRITE,          // write keyword
-    tODD,            // odd keyword
-    tEOF,            // end of file
-    tEPSILON         // epsilon (empty)
+    tCONST,          // const关键字
+    tVAR,            // var关键字
+    tPROCEDURE,      // procedure关键字
+    tBEGIN,          // begin关键字
+    tEND,            // end关键字
+    tIF,             // if关键字
+    tTHEN,           // then关键字
+    tWHILE,          // while关键字
+    tDO,             // do关键字
+    tCALL,           // call关键字
+    tREAD,           // read关键字
+    tWRITE,          // write关键字
+    tODD,            // odd关键字
+    tEOF,            // 文件结束
+    tEPSILON         // ε（空串）
 };
 
 //============================================================================
-// LR(1) Parser Non-Terminal Symbols
+// LR(1)解析器非终结符
 //============================================================================
 
 enum class LR1NonTerminal {
-    P,               // Program
-    B,               // Block
-    DL,              // Declaration list
-    C,               // Const declaration
-    CL,              // Const list tail
-    V,               // Var declaration
-    VL,              // Var list tail
-    PR,              // Procedure declaration
-    S,               // Statement
-    L,               // Statement list (inside begin-end)
-    CO,              // Condition
-    E,               // Expression
-    ET,              // Expression tail (right-recursive)
-    T,               // Term
-    TT,              // Term tail (right-recursive)
-    F,               // Factor
-    A                // Expression argument list (write)
+    P,               // 程序
+    B,               // 分程序
+    DL,              // 声明列表
+    C,               // 常量声明
+    CL,              // 常量列表尾部
+    V,               // 变量声明
+    VL,              // 变量列表尾部
+    PR,              // 过程声明
+    S,               // 语句
+    L,               // 语句列表（begin-end内部）
+    CO,              // 条件
+    E,               // 表达式
+    ET,              // 表达式尾部（右递归）
+    T,               // 项
+    TT,              // 项尾部（右递归）
+    F,               // 因子
+    A                // 表达式参数列表（write）
 };
 
 //============================================================================
-// Grammar Symbol (terminal or non-terminal)
+// 文法符号（终结符或非终结符）
 //============================================================================
 
 struct LR1Symbol {
-    bool isTerminal;
+    bool isTerminal;  // 是否为终结符
     union {
-        LR1Terminal terminal;
-        LR1NonTerminal nonTerminal;
+        LR1Terminal terminal;      // 终结符值
+        LR1NonTerminal nonTerminal; // 非终结符值
     };
 
     LR1Symbol() : isTerminal(true), terminal(LR1Terminal::tEPSILON) {}
     LR1Symbol(LR1Terminal t) : isTerminal(true), terminal(t) {}
     LR1Symbol(LR1NonTerminal nt) : isTerminal(false), nonTerminal(nt) {}
 
+    // 等价比较运算符
     bool operator==(const LR1Symbol& other) const {
         if (isTerminal != other.isTerminal) return false;
         if (isTerminal) return terminal == other.terminal;
         return nonTerminal == other.nonTerminal;
     }
 
+    // 小于比较运算符（用于set/map排序）
     bool operator<(const LR1Symbol& other) const {
         if (isTerminal != other.isTerminal) return isTerminal < other.isTerminal;
         if (isTerminal) return static_cast<int>(terminal) < static_cast<int>(other.terminal);
@@ -117,13 +117,13 @@ struct LR1Symbol {
 };
 
 //============================================================================
-// Grammar Production
+// 文法产生式
 //============================================================================
 
 struct LR1Production {
-    int id;
-    LR1NonTerminal lhs;
-    std::vector<LR1Symbol> rhs;
+    int id;                          // 产生式编号
+    LR1NonTerminal lhs;              // 左部（非终结符）
+    std::vector<LR1Symbol> rhs;      // 右部符号列表
 
     LR1Production() : id(-1), lhs(LR1NonTerminal::P) {}
     LR1Production(int i, LR1NonTerminal l, std::vector<LR1Symbol> r)
@@ -131,24 +131,26 @@ struct LR1Production {
 };
 
 //============================================================================
-// LR(1) Item: [A -> alpha . beta, lookahead]
+// LR(1)项目: [A -> alpha . beta, lookahead]
 //============================================================================
 
 struct LR1Item {
-    int productionId;
-    int dot;                // Position of dot (0 = before first symbol)
-    LR1Terminal lookahead;  // Lookahead terminal
+    int productionId;         // 产生式编号
+    int dot;                  // 点的位置（0 = 第一个符号之前）
+    LR1Terminal lookahead;    // 向前看终结符
 
     LR1Item() : productionId(0), dot(0), lookahead(LR1Terminal::tEOF) {}
     LR1Item(int pid, int d, LR1Terminal la)
         : productionId(pid), dot(d), lookahead(la) {}
 
+    // 等价比较运算符
     bool operator==(const LR1Item& other) const {
         return productionId == other.productionId &&
                dot == other.dot &&
                lookahead == other.lookahead;
     }
 
+    // 小于比较运算符（用于set排序）
     bool operator<(const LR1Item& other) const {
         if (productionId != other.productionId)
             return productionId < other.productionId;
@@ -158,25 +160,25 @@ struct LR1Item {
 };
 
 //============================================================================
-// LR(1) State: a set of LR(1) items
+// LR(1)状态：LR(1)项目的集合
 //============================================================================
 
 using LR1State = std::set<LR1Item>;
 
 //============================================================================
-// Action types
+// 动作类型
 //============================================================================
 
 enum class LRActionType {
-    SHIFT,
-    REDUCE,
-    ACCEPT,
-    ERROR
+    SHIFT,    // 移进
+    REDUCE,   // 归约
+    ACCEPT,   // 接受
+    ERROR     // 错误
 };
 
 struct LRAction {
-    LRActionType type;
-    int value;  // For SHIFT: next state; For REDUCE: production id
+    LRActionType type;  // 动作类型
+    int value;          // SHIFT:下一状态; REDUCE:产生式编号
 
     LRAction() : type(LRActionType::ERROR), value(-1) {}
     LRAction(LRActionType t, int v) : type(t), value(v) {}
@@ -187,30 +189,30 @@ struct LRAction {
 };
 
 //============================================================================
-// Parse result node (for building AST / comparison)
+// 解析结果节点（用于构建AST/比较）
 //============================================================================
 
 struct LR1ParseNode {
-    LR1NonTerminal symbol;
-    int productionId;
-    std::vector<LR1ParseNode> children;
-    Token token;  // For leaf nodes (terminals)
+    LR1NonTerminal symbol;          // 非终结符符号
+    int productionId;               // 使用的产生式编号
+    std::vector<LR1ParseNode> children;  // 子节点列表
+    Token token;                    // 叶节点（终结符）的Token
 
     LR1ParseNode() : symbol(LR1NonTerminal::P), productionId(-1) {}
 };
 
 //============================================================================
-// Dual Parser Mode
+// 双解析器模式
 //============================================================================
 
 enum class ParserMode {
-    LL1_ONLY,       // Only use LL(1) recursive descent parser
-    LR1_ONLY,       // Only use LR(1) shift-reduce parser
-    DUAL            // Use both parsers and compare results
+    LL1_ONLY,       // 仅使用LL(1)递归下降解析器
+    LR1_ONLY,       // 仅使用LR(1)移进-归约解析器
+    DUAL            // 使用双解析器并比较结果
 };
 
 //============================================================================
-// LR1Parser Class
+// LR1Parser类
 //============================================================================
 
 class LR1Parser {
@@ -218,91 +220,144 @@ public:
     LR1Parser();
     ~LR1Parser();
 
-    // Syntax analysis
+    //============================================================================
+    // 语法分析
+    //============================================================================
+
+    /** 执行语法分析 */
     bool parse(const std::vector<Token>& tokens);
 
-    // Error handling
+    //============================================================================
+    // 错误处理
+    //============================================================================
+
     bool hasError() const { return hasError_; }
     const std::string& getErrorMessage() const { return errorMessage_; }
 
-    // Generated code output
+    //============================================================================
+    // 生成的代码输出
+    //============================================================================
+
     const std::vector<Quadruple>& getQuadruples() const { return quadruples_; }
 
-    // Internal state for diagnostic output
+    //============================================================================
+    // 内部状态诊断输出
+    //============================================================================
+
     const std::vector<LR1State>& getStates() const { return states_; }
     void printParseTable(std::ostream& os) const;
     void printStates(std::ostream& os) const;
 
 private:
-    // Grammar
-    std::vector<LR1Production> productions_;
-    std::map<LR1Symbol, std::set<LR1Terminal>> firstSets_;
-    std::map<LR1NonTerminal, std::set<LR1Terminal>> followSets_;
+    //============================================================================
+    // 文法数据
+    //============================================================================
 
-    // LR(1) canonical collection
-    std::vector<LR1State> states_;
+    std::vector<LR1Production> productions_;  // 产生式列表
+    std::map<LR1Symbol, std::set<LR1Terminal>> firstSets_;  // FIRST集
+    std::map<LR1NonTerminal, std::set<LR1Terminal>> followSets_;  // FOLLOW集
 
-    // Parse tables
+    //============================================================================
+    // LR(1)规范集族
+    //============================================================================
+
+    std::vector<LR1State> states_;  // 状态集合
+
+    //============================================================================
+    // 解析表
+    //============================================================================
+
     // ACTION[state, terminal] -> action
     std::map<std::pair<int, LR1Terminal>, LRAction> actionTable_;
     // GOTO[state, non-terminal] -> next state
     std::map<std::pair<int, LR1NonTerminal>, int> gotoTable_;
 
-    // Parse result
+    //============================================================================
+    // 解析结果
+    //============================================================================
+
     bool hasError_;
     std::string errorMessage_;
     std::vector<Quadruple> quadruples_;
 
-    // Token stream and current position
+    //============================================================================
+    // Token流和当前位置
+    //============================================================================
+
     const std::vector<Token>* tokens_;
     size_t tokenPos_;
 
-    // Symbol table for LR1 parser's own semantic analysis
+    //============================================================================
+    // 符号表（LR1解析器语义分析专用）
+    //============================================================================
+
     SymbolTable symTable_;
 
-    // Grammar initialization
-    void initGrammar();
-    void computeFirstSets();
-    void computeFollowSets();
-    std::set<LR1Terminal> computeFirst(const std::vector<LR1Symbol>& symbols, size_t startPos);
+    //============================================================================
+    // 文法初始化
+    //============================================================================
 
-    // LR(1) item set construction
-    LR1State computeClosure(const LR1State& items);
-    void buildCanonicalCollection();
+    void initGrammar();  // 初始化文法
+    void computeFirstSets();  // 计算FIRST集
+    void computeFollowSets();  // 计算FOLLOW集
+    std::set<LR1Terminal> computeFirst(const std::vector<LR1Symbol>& symbols, size_t startPos);  // 计算符号串FIRST集
 
-    // Parse table construction
-    void buildParseTables();
+    //============================================================================
+    // LR(1)项目集构造
+    //============================================================================
 
-    // Token-to-terminal mapping
-    LR1Terminal tokenToTerminal(const Token& token) const;
+    LR1State computeClosure(const LR1State& items);  // 计算闭包
+    void buildCanonicalCollection();  // 构建规范集族
 
-    // Terminal string conversion (for diagnostics)
-    std::string terminalToString(LR1Terminal t) const;
-    std::string nonTerminalToString(LR1NonTerminal nt) const;
-    std::string symbolToString(const LR1Symbol& sym) const;
-    std::string productionToString(int prodId) const;
+    //============================================================================
+    // 解析表构造
+    //============================================================================
 
-    // Semantic actions executed on reduction
-    void executeSemanticAction(int productionId);
+    void buildParseTables();  // 构建ACTION和GOTO表
 
-    // Comparison helpers
-    std::string getTokenValue(const Token& token) const;
+    //============================================================================
+    // Token到终结符映射
+    //============================================================================
+
+    LR1Terminal tokenToTerminal(const Token& token) const;  // Token转终结符
+
+    //============================================================================
+    // 终结符字符串转换（诊断输出）
+    //============================================================================
+
+    std::string terminalToString(LR1Terminal t) const;  // 终结符转字符串
+    std::string nonTerminalToString(LR1NonTerminal nt) const;  // 非终结符转字符串
+    std::string symbolToString(const LR1Symbol& sym) const;  // 符号转字符串
+    std::string productionToString(int prodId) const;  // 产生式转字符串
+
+    //============================================================================
+    // 归约时执行的语义动作
+    //============================================================================
+
+    void executeSemanticAction(int productionId);  // 执行语义动作
+
+    //============================================================================
+    // 比较辅助函数
+    //============================================================================
+
+    std::string getTokenValue(const Token& token) const;  // 获取Token值
 };
 
 //============================================================================
-// Dual Parser Validator
+// 双解析器验证结果
 //============================================================================
 
 struct ValidationResult {
-    bool bothSucceeded;
-    bool resultsMatch;
-    std::string ll1Error;
-    std::string lr1Error;
-    std::string diagnosticInfo;
-    std::vector<Quadruple> ll1Quads;
-    std::vector<Quadruple> lr1Quads;
+    bool bothSucceeded;              // 两个解析器都成功
+    bool resultsMatch;               // 结果匹配
+    std::string ll1Error;            // LL(1)错误消息
+    std::string lr1Error;            // LR(1)错误消息
+    std::string diagnosticInfo;      // 诊断信息
+    std::vector<Quadruple> ll1Quads; // LL(1)四元式
+    std::vector<Quadruple> lr1Quads; // LR(1)四元式
 };
 
+/** 比较双解析器结果 */
 ValidationResult compareParserResults(
     bool ll1Success, const std::string& ll1Error,
     const std::vector<Quadruple>& ll1Quads,

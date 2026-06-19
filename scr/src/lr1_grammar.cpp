@@ -1,8 +1,8 @@
 /**
  * @file lr1_grammar.cpp
- * @brief PL/0 LR(1) Grammar Definition and FIRST/FOLLOW Sets
- * @details Defines all 46 productions of the PL/0 grammar for LR(1) parsing,
- *          and computes FIRST and FOLLOW sets for all grammar symbols.
+ * @brief PL/0 LR(1)文法定义与FIRST/FOLLOW集
+ * @details 定义PL/0语法的全部46条产生式用于LR(1)解析，
+ *          并计算所有文法符号的FIRST集和FOLLOW集。
  * @author PL/0 Compiler Project
  * @date 2026-06-09
  */
@@ -23,16 +23,16 @@ void LR1Parser::initGrammar() {
 
     productions_.clear();
 
-    // Production 0: P' -> P  (augmented start)
+    // 产生式0: P' -> P（增广文法的起始产生式）
     productions_.push_back({0, N::P, {LR1Symbol(N::P)}});
 
-    // Production 1: P -> B .
+    // 产生式1: P -> B .
     productions_.push_back({1, N::P, {LR1Symbol(N::B), LR1Symbol(T::tDOT)}});
 
-    // Production 2: B -> DL S
+    // 产生式2: B -> DL S
     productions_.push_back({2, N::B, {LR1Symbol(N::DL), LR1Symbol(N::S)}});
 
-    // Declarations: DL -> DL C | DL V | DL PR | epsilon
+    // 声明部分: DL -> DL C | DL V | DL PR | ε
     productions_.push_back({3, N::DL, {LR1Symbol(N::DL), LR1Symbol(N::C)}});
     productions_.push_back({4, N::DL, {LR1Symbol(N::DL), LR1Symbol(N::V)}});
     productions_.push_back({5, N::DL, {LR1Symbol(N::DL), LR1Symbol(N::PR)}});
@@ -45,7 +45,7 @@ void LR1Parser::initGrammar() {
         LR1Symbol(N::CL), LR1Symbol(T::tSEMICOLON)
     }});
 
-    // CL -> , I = N CL | epsilon
+    // CL -> , I = N CL | ε
     productions_.push_back({8, N::CL, {
         LR1Symbol(T::tCOMMA), LR1Symbol(T::tIDENT),
         LR1Symbol(T::tEQ), LR1Symbol(T::tNUMBER), LR1Symbol(N::CL)
@@ -58,7 +58,7 @@ void LR1Parser::initGrammar() {
         LR1Symbol(N::VL), LR1Symbol(T::tSEMICOLON)
     }});
 
-    // VL -> , I VL | epsilon
+    // VL -> , I VL | ε
     productions_.push_back({11, N::VL, {
         LR1Symbol(T::tCOMMA), LR1Symbol(T::tIDENT), LR1Symbol(N::VL)
     }});
@@ -71,7 +71,7 @@ void LR1Parser::initGrammar() {
         LR1Symbol(T::tSEMICOLON)
     }});
 
-    // Statements
+    // 语句部分
     productions_.push_back({14, N::S, {
         LR1Symbol(T::tIDENT), LR1Symbol(T::tASSIGN), LR1Symbol(N::E)
     }});
@@ -103,21 +103,21 @@ void LR1Parser::initGrammar() {
         LR1Symbol(N::E), LR1Symbol(N::A), LR1Symbol(T::tRPAREN)
     }});
 
-    // A -> , E A | epsilon
+    // A -> , E A | ε
     productions_.push_back({23, N::A, {
         LR1Symbol(T::tCOMMA), LR1Symbol(N::E), LR1Symbol(N::A)
     }});
     productions_.push_back({24, N::A, {}});
 
-    // S -> epsilon (empty statement)
+    // S -> ε（空语句）
     productions_.push_back({25, N::S, {}});
 
-    // Conditions
+    // 条件部分
     productions_.push_back({26, N::CO, {
         LR1Symbol(T::tODD), LR1Symbol(N::E)
     }});
 
-    // CO -> E relop E (one production per relop)
+    // CO -> E relop E（每个关系运算符一条产生式）
     productions_.push_back({27, N::CO, {
         LR1Symbol(N::E), LR1Symbol(T::tEQ), LR1Symbol(N::E)
     }});
@@ -137,7 +137,7 @@ void LR1Parser::initGrammar() {
         LR1Symbol(N::E), LR1Symbol(T::tGTE), LR1Symbol(N::E)
     }});
 
-    // Expressions
+    // 表达式部分
     productions_.push_back({33, N::E, {
         LR1Symbol(T::tPLUS), LR1Symbol(N::T), LR1Symbol(N::ET)
     }});
@@ -148,7 +148,7 @@ void LR1Parser::initGrammar() {
         LR1Symbol(N::T), LR1Symbol(N::ET)
     }});
 
-    // ET -> + T ET | - T ET | epsilon
+    // ET -> + T ET | - T ET | ε
     productions_.push_back({36, N::ET, {
         LR1Symbol(T::tPLUS), LR1Symbol(N::T), LR1Symbol(N::ET)
     }});
@@ -162,7 +162,7 @@ void LR1Parser::initGrammar() {
         LR1Symbol(N::F), LR1Symbol(N::TT)
     }});
 
-    // TT -> * F TT | / F TT | epsilon
+    // TT -> * F TT | / F TT | ε
     productions_.push_back({40, N::TT, {
         LR1Symbol(T::tSTAR), LR1Symbol(N::F), LR1Symbol(N::TT)
     }});
@@ -171,7 +171,7 @@ void LR1Parser::initGrammar() {
     }});
     productions_.push_back({42, N::TT, {}});
 
-    // Factors
+    // 因子部分
     productions_.push_back({43, N::F, {LR1Symbol(T::tIDENT)}});
     productions_.push_back({44, N::F, {LR1Symbol(T::tNUMBER)}});
     productions_.push_back({45, N::F, {
@@ -180,28 +180,28 @@ void LR1Parser::initGrammar() {
 }
 
 //============================================================================
-// FIRST Set Computation
+// FIRST集计算
 //============================================================================
 
 void LR1Parser::computeFirstSets() {
-    // FIRST(t) = {t} for all terminals
+    // 对所有终结符，FIRST(t) = {t}
     for (int i = 0; i <= static_cast<int>(LR1Terminal::tEPSILON); i++) {
         LR1Terminal t = static_cast<LR1Terminal>(i);
         firstSets_[LR1Symbol(t)] = {t};
     }
 
-    // Initialize FIRST for all non-terminals as empty
+    // 初始化所有非终结符的FIRST集为空
     for (int i = 0; i <= static_cast<int>(LR1NonTerminal::A); i++) {
         LR1NonTerminal nt = static_cast<LR1NonTerminal>(i);
         firstSets_[LR1Symbol(nt)] = {};
     }
 
-    // Iterate until fixed point
+    // 迭代直至不动点
     bool changed = true;
     while (changed) {
         changed = false;
         for (const auto& prod : productions_) {
-            if (prod.id == 0) continue; // skip augmented start
+            if (prod.id == 0) continue; // 跳过增广起始产生式
             LR1Symbol lhs(prod.lhs);
             auto& firstLHS = firstSets_[lhs];
 
@@ -234,18 +234,18 @@ void LR1Parser::computeFirstSets() {
 }
 
 //============================================================================
-// FOLLOW Set Computation
+// FOLLOW集计算
 //============================================================================
 
 void LR1Parser::computeFollowSets() {
     using T = LR1Terminal;
 
-    // Initialize all non-terminal FOLLOW sets as empty
+    // 初始化所有非终结符的FOLLOW集为空
     for (int i = 0; i <= static_cast<int>(LR1NonTerminal::A); i++) {
         followSets_[static_cast<LR1NonTerminal>(i)] = {};
     }
 
-    // Start symbol gets EOF
+    // 起始符号的FOLLOW集包含EOF
     followSets_[LR1NonTerminal::P].insert(T::tEOF);
 
     bool changed = true;
@@ -260,7 +260,7 @@ void LR1Parser::computeFollowSets() {
                 LR1NonTerminal B = prod.rhs[i].nonTerminal;
                 auto& followB = followSets_[B];
 
-                // Compute FIRST(beta)
+                // 计算FIRST(beta)
                 std::set<T> firstBeta;
                 bool allCanBeEmpty = true;
                 for (size_t j = i + 1; j < prod.rhs.size(); j++) {
@@ -274,12 +274,12 @@ void LR1Parser::computeFollowSets() {
                     }
                 }
 
-                // FOLLOW(B) |= FIRST(beta) - {epsilon}
+                // FOLLOW(B) |= FIRST(beta) - {ε}
                 for (const auto& t : firstBeta) {
                     if (followB.insert(t).second) changed = true;
                 }
 
-                // If beta =>* epsilon: FOLLOW(B) |= FOLLOW(A)
+                // 如果beta =>* ε: FOLLOW(B) |= FOLLOW(A)
                 if (allCanBeEmpty) {
                     for (const auto& t : followSets_[prod.lhs]) {
                         if (followB.insert(t).second) changed = true;
@@ -291,7 +291,7 @@ void LR1Parser::computeFollowSets() {
 }
 
 //============================================================================
-// FIRST of a symbol sequence
+// 符号串的FIRST集计算
 //============================================================================
 
 std::set<LR1Terminal> LR1Parser::computeFirst(
