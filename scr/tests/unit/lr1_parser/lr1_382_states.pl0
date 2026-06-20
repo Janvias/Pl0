@@ -1,0 +1,29 @@
+const a = 1;
+var x, y, z;
+procedure p1;
+    var u, v;
+    begin
+        u := a;
+        v := u + 1;
+        write(u, v)
+    end;
+procedure p2;
+    var w;
+    begin
+        w := x + y;
+        if w > 0 then write(w);
+        while w < 100 do
+            w := w + 1
+    end;
+begin
+    x := 10;
+    y := 20;
+    z := x * y;
+    if odd z then
+        write(1);
+    if z <= 200 then
+        write(2);
+    call p1;
+    call p2;
+    write(x, y, z)
+end.

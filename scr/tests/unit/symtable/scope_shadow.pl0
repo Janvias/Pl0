@@ -1,0 +1,13 @@
+var x;
+procedure p;
+    var x;
+    begin
+        x := 999;
+        write(x)
+    end;
+begin
+    x := 100;
+    write(x);
+    call p;
+    write(x)
+end.

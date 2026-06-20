@@ -1,0 +1,6 @@
+var x, abc, var123, myVar, test1, alpha, betaX, nname;
+begin
+    x := abc;
+    var123 := myVar + test1;
+    alpha := betaX * nname
+end.

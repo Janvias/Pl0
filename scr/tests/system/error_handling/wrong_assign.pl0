@@ -1,0 +1,6 @@
+const x := 1;
+var y;
+begin
+    y := x;
+    write(y)
+end.

@@ -1,0 +1,7 @@
+var x, y, z;
+begin
+    x := 5;
+    y := 3;
+    z := -x + (-y);
+    write(z)
+end.

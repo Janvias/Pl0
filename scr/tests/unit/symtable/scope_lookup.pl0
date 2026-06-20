@@ -1,0 +1,13 @@
+var outer;
+procedure p;
+    var inner;
+    begin
+        inner := 1;
+        outer := inner + 10;
+        write(outer)
+    end;
+begin
+    outer := 100;
+    call p;
+    write(outer)
+end.

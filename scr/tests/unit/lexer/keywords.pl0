@@ -1,0 +1,17 @@
+const c = 1;
+var v;
+procedure p;
+    var inner;
+    begin
+        inner := 0;
+        if odd inner then
+            write(inner)
+    end;
+begin
+    v := c;
+    while v < 10 do
+        v := v + 1;
+    call p;
+    read(v);
+    write(v)
+end.

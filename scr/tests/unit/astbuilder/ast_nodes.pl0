@@ -1,0 +1,18 @@
+const max = 100;
+var x, y, result;
+procedure square;
+    var temp;
+    begin
+        temp := x * x;
+        write(temp)
+    end;
+begin
+    x := 5;
+    y := 10;
+    if x < y then
+        result := x + y;
+    while x < max do
+        x := x + 1;
+    call square;
+    write(result)
+end.

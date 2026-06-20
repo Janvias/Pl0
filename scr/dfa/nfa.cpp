@@ -64,9 +64,10 @@ std::set<NFAState*> NFA::epsilonClosure(const std::set<NFAState*>& states) {
         q.push(state);
     }
     
-    while (!q.empty())NFAState* current = q.front();
+    while (!q.empty()) {
+        NFAState* current = q.front();
         q.pop();
-        
+
         // 检查是否有ε转换（'\0'表示ε）
         if (current->transitions.count('\0')) {
             for (NFAState* next : current->transitions['\0']) {

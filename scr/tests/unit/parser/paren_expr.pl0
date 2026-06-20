@@ -1,0 +1,9 @@
+var a, b, c, d, result;
+begin
+    a := 5;
+    b := 3;
+    c := 4;
+    d := 2;
+    result := (a + b) * (c - d);
+    write(result)
+end.

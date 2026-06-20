@@ -1,0 +1,24 @@
+var x;
+procedure p1;
+    procedure p2;
+        procedure p3;
+            procedure p4;
+                var y;
+                begin
+                    y := 42;
+                    write(y)
+                end;
+            begin
+                call p4
+            end;
+        begin
+            call p3
+        end;
+    begin
+        call p2
+    end;
+begin
+    x := 10;
+    call p1;
+    write(x)
+end.

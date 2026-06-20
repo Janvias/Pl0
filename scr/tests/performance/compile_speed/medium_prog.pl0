@@ -1,0 +1,21 @@
+var i, j, k, sum, product;
+const max = 100;
+begin
+    i := 1;
+    sum := 0;
+    product := 1;
+    while i <= max do
+    begin
+        j := 1;
+        while j <= 10 do
+        begin
+            k := i * j;
+            sum := sum + k;
+            product := product * (k / 10 + 1);
+            j := j + 1
+        end;
+        i := i + 1
+    end;
+    write(sum);
+    write(product)
+end.

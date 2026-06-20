@@ -1,0 +1,8 @@
+var x;
+procedure p;
+    begin
+        write(42)
+    end;
+begin
+    call p
+end.

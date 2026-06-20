@@ -1,0 +1,17 @@
+const n = 10;
+var a, b, i, temp;
+begin
+    a := 0;
+    b := 1;
+    i := 1;
+    write(a);
+    write(b);
+    while i < n do
+    begin
+        temp := a + b;
+        write(temp);
+        a := b;
+        b := temp;
+        i := i + 1
+    end
+end.

@@ -1,0 +1,15 @@
+var x, y, z;
+begin
+    x := 10;
+    y := 20;
+    z := x + y;
+    z := x - y;
+    z := x * y;
+    z := x / y;
+    if x = y then write(x);
+    if x # y then write(y);
+    if x < y then write(x);
+    if x <= y then write(y);
+    if x > y then write(x);
+    if x >= y then write(y)
+end.

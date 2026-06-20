@@ -1,0 +1,11 @@
+/* This is a comment */
+var x, y;
+
+/* Multi-line
+   comment block */
+begin
+    x := 10;   /* inline comment */
+    y := 20;
+    /* another comment */
+    write(x, y)
+end.

@@ -1,0 +1,18 @@
+const max = 100;
+var x, y, z;
+procedure test;
+    var inner;
+    begin
+        inner := x + y;
+        if inner > 0 then
+            write(inner);
+        while inner < max do
+            inner := inner + 1
+    end;
+begin
+    x := 10;
+    y := 20;
+    z := x * y;
+    call test;
+    write(z)
+end.

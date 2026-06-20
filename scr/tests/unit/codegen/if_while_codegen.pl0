@@ -1,0 +1,12 @@
+var x, y;
+begin
+    x := 0;
+    y := 10;
+    if x < y then
+        x := x + 1;
+    while x < 10 do
+    begin
+        x := x + 1;
+        write(x)
+    end
+end.

@@ -1,0 +1,6 @@
+var abcdefgh, xyz12345;
+begin
+    abcdefgh := 100;
+    xyz12345 := 200;
+    write(abcdefgh, xyz12345)
+end.

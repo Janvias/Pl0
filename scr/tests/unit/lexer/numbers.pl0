@@ -1,0 +1,9 @@
+const max = 99999999;
+const min = 0;
+const mid = 123;
+var x;
+begin
+    x := 42;
+    x := x + 1;
+    write(x)
+end.

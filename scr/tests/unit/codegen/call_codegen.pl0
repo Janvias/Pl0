@@ -1,0 +1,10 @@
+var x;
+procedure square;
+    begin
+        x := x * x
+    end;
+begin
+    x := 5;
+    call square;
+    write(x)
+end.

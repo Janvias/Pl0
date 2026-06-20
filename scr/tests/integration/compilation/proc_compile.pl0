@@ -1,0 +1,25 @@
+var a, b, result;
+procedure add;
+    begin
+        result := a + b;
+        write(result)
+    end;
+procedure multiply;
+    var i, temp;
+    begin
+        temp := 0;
+        i := 0;
+        while i < b do
+        begin
+            temp := temp + a;
+            i := i + 1
+        end;
+        result := temp;
+        write(result)
+    end;
+begin
+    a := 5;
+    b := 3;
+    call add;
+    call multiply
+end.

@@ -1,0 +1,15 @@
+const pi = 3;
+var x, y, z;
+procedure p;
+    var inner;
+    begin
+        inner := 99;
+        write(inner)
+    end;
+begin
+    x := 10;
+    y := 20;
+    z := pi;
+    call p;
+    write(x, y, z)
+end.

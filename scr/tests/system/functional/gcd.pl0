@@ -1,0 +1,11 @@
+var a, b;
+begin
+    a := 48;
+    b := 18;
+    while a # b do
+        if a > b then
+            a := a - b;
+        if b > a then
+            b := b - a;
+    write(a)
+end.

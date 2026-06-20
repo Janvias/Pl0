@@ -1,0 +1,7 @@
+var x, y, z;
+const max = 100;
+begin
+    x := (1 + 2);
+    y := x;
+    write(x, y, z)
+end.

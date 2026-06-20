@@ -1,0 +1,6 @@
+const a = 1;
+var x;
+begin
+    x := a;
+    write(x)
+end.

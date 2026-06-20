@@ -1,0 +1,15 @@
+var x;
+procedure p;
+    procedure q;
+        var y;
+        begin
+            y := 2;
+            write(y)
+        end;
+    begin
+        call q
+    end;
+begin
+    x := 1;
+    call p
+end.

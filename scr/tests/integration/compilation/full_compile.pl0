@@ -1,0 +1,16 @@
+const max = 100;
+var x, y, z;
+begin
+    x := 10;
+    y := 20;
+    z := x + y;
+    if z > max then
+        write(1);
+    if z <= max then
+        write(0);
+    while x < 50 do
+    begin
+        x := x + 1;
+        write(x)
+    end
+end.

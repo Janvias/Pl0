@@ -1,0 +1,12 @@
+var x;
+begin
+    x := 1;
+    if odd x then
+        write(1);
+    if x = 1 then write(2);
+    if x # 2 then write(3);
+    if x < 3 then write(4);
+    if x <= 4 then write(5);
+    if x > 0 then write(6);
+    if x >= 1 then write(7)
+end.

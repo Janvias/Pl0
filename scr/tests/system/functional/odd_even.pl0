@@ -1,0 +1,11 @@
+var x, y;
+begin
+    x := 7;
+    y := 8;
+    if odd x then
+        write(1);
+    if odd y then
+        write(0);
+    if odd (x + y) then
+        write(1)
+end.
