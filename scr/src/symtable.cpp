@@ -98,6 +98,13 @@ std::string SymbolTable::getNewTemp() {
 //============================================================================
 
 void SymbolTable::print(std::ostream& os) const {
+    // 检查是否有实际符号（忽略global空作用域）
+    size_t totalSymbols = 0;
+    for (const auto& scope : scopeStack_) {
+        totalSymbols += scope.symbols.size();
+    }
+    if (totalSymbols == 0) return;  // 解析后作用域已弹出，无符号可输出
+
     os << "\n===== SYMBOL TABLE =====\n";
     os << std::left << std::setw(15) << "Name"
        << std::setw(10) << "Kind"

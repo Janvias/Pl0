@@ -118,6 +118,7 @@ bool LR1Parser::parse(const std::vector<Token>& tokens) {
         LR1Symbol symbol;
         std::string value;       // For identifiers, numbers, operators
         std::string tempName;    // For expression temporaries (T1, T2, ...)
+        int quadIndex = 0;       // Quad index at time of push (0-based, for jump labels)
     };
 
     std::vector<StackEntry> valueStack;
@@ -178,6 +179,7 @@ bool LR1Parser::parse(const std::vector<Token>& tokens) {
             StackEntry entry;
             entry.symbol = LR1Symbol(lookahead);
             entry.value = currentValue();
+            entry.quadIndex = static_cast<int>(quadruples_.size());
             valueStack.push_back(entry);
             stateStack.push_back(action.value);
             advanceToken();
@@ -203,6 +205,7 @@ bool LR1Parser::parse(const std::vector<Token>& tokens) {
                 // No popping, just push the result non-terminal
                 StackEntry result;
                 result.symbol = LR1Symbol(prod.lhs);
+                result.quadIndex = static_cast<int>(quadruples_.size());
                 valueStack.push_back(result);
             } else {
                 // Pop RHS symbols from both stacks
@@ -217,6 +220,7 @@ bool LR1Parser::parse(const std::vector<Token>& tokens) {
                 // Execute semantic action
                 StackEntry result;
                 result.symbol = LR1Symbol(prod.lhs);
+                result.quadIndex = rhsValues[0].quadIndex;
 
                 switch (prodId) {
 
@@ -410,9 +414,23 @@ bool LR1Parser::parse(const std::vector<Token>& tokens) {
                 case 5:  // DL -> DL PR
                 case 15: // S -> begin S L end
                 case 16: // L -> ; S L
-                case 18: // S -> if CO then S
-                case 19: // S -> while CO do S
                     break;
+
+                case 18: // S -> if CO then S
+                    // LL(1) also emits no jump for if-then;
+                    // the PL/0 VM uses the condition result implicitly.
+                    break;
+
+                case 19: { // S -> while CO do S
+                    // rhsValues[1] = CO (condition), rhsValues[3] = S (body)
+                    // Emit JUMP back to the start of the condition code
+                    int condStart = rhsValues[1].quadIndex;
+                    std::string loopLabel = "L" + std::to_string(condStart);
+                    quadruples_.push_back(Quadruple(
+                        OpCode::JUMP, loopLabel, "", "",
+                        static_cast<int>(quadruples_.size()) + 100));
+                    break;
+                }
 
                 default:
                     break;

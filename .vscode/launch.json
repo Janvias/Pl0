@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/j1978/Desktop/Pl0/scr/src",
-      "program": "c:/Users/j1978/Desktop/Pl0/scr/src/build/Debug/outDebug",
+      "cwd": "c:/Users/j1978/Desktop/Pl0/scr/dfa",
+      "program": "c:/Users/j1978/Desktop/Pl0/scr/dfa/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
