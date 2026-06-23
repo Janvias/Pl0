@@ -1,8 +1,9 @@
 /**
  * @file error_suggestor.cpp
- * @brief Error Suggestor implementation — pattern-based error diagnosis
- * @details Matches compiler error messages against a knowledge base of
- *          common PL/0 mistakes and generates structured fix suggestions.
+ * @brief 错误修复建议器实现 — 基于模式的错误诊断
+ * @details 将编译器错误消息与常见PL/0错误知识库进行匹配，
+ *          生成结构化的修复建议。支持缺失Token、标识符错误、
+ *          表达式错误、语法错误和结构错误等多种错误类型。
  * @author PL/0 Compiler Project
  * @date 2026-06-11
  */
@@ -25,6 +26,12 @@ ErrorSuggestor::ErrorSuggestor() {
 //============================================================================
 // 知识库初始化
 //============================================================================
+// 定义常见PL/0编译错误的模式匹配规则和修复建议：
+// - 缺失Token类：缺少分号、关键字、操作符等
+// - 标识符类：未定义、重复声明等
+// - 表达式类：括号不匹配、非法Token等
+// - 语法类：期望标识符、数字等
+// - 结构类：意外Token等
 
 void ErrorSuggestor::initKnowledgeBase() {
     knowledgeBase_ = {
@@ -123,6 +130,7 @@ void ErrorSuggestor::initKnowledgeBase() {
 //============================================================================
 // 模式匹配
 //============================================================================
+// 使用大小写不敏感的子串匹配，判断错误消息是否符合某一错误模式
 
 bool ErrorSuggestor::matchPattern(const std::string& msg,
                                    const std::string& pattern) const {
@@ -138,6 +146,7 @@ bool ErrorSuggestor::matchPattern(const std::string& msg,
 //============================================================================
 // 获取建议
 //============================================================================
+// 根据错误消息查找匹配的错误模式，返回对应的分析和修复建议列表
 
 std::vector<std::string> ErrorSuggestor::getSuggestions(
     const std::string& errorMsg) const {
@@ -167,6 +176,7 @@ std::vector<std::string> ErrorSuggestor::getSuggestions(
 //============================================================================
 // 打印格式化的建议
 //============================================================================
+// 将错误建议以友好的格式输出到指定流
 
 void ErrorSuggestor::printSuggestions(std::ostream& os,
                                        const std::string& errorMsg) const {

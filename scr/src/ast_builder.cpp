@@ -1,9 +1,8 @@
 /**
  * @file ast_builder.cpp
- * @brief AST Builder implementation — tree construction and DOT generation
- * @details Uses a parent stack to track nesting during recursive-descent
- *          parsing. The LL(1) parser calls beginNode/endNode/addLeaf at
- *          appropriate grammar positions to build the AST incrementally.
+ * @brief AST构建器实现 — 语法树构造与DOT生成
+ * @details 使用父节点栈来跟踪递归下降解析过程中的嵌套关系。
+ *          LL(1)解析器在适当的语法位置调用beginNode/endNode/addLeaf来增量构建AST。
  * @author PL/0 Compiler Project
  * @date 2026-06-11
  */
@@ -14,7 +13,7 @@
 namespace PL0 {
 
 //============================================================================
-// Constructor / Destructor
+// 构造函数 / 析构函数
 //============================================================================
 
 ASTBuilder::ASTBuilder() {
@@ -86,7 +85,7 @@ std::string ASTBuilder::nodeTypeToString(ASTNodeType t) {
 }
 
 //============================================================================
-// DOT生成（用于Graphviz）
+// DOT生成（用于Graphviz可视化）
 //============================================================================
 
 std::string ASTBuilder::generateDOT(const std::string& graphName) const {
@@ -143,7 +142,7 @@ void ASTBuilder::generateDOTNode(const ASTNode* node, int& id,
 }
 
 //============================================================================
-// 文本树转储
+// 文本树转储（用于调试输出）
 //============================================================================
 
 void ASTBuilder::printTree(std::ostream& os) const {

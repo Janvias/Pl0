@@ -1,9 +1,9 @@
 /**
  * @file grammar_normalizer.cpp
- * @brief Grammar Normalizer — left-factoring + left-recursion elimination
- * @details Transforms grammar productions into normalized form by:
- *          1. Extracting common left factors from alternative productions
- *          2. Eliminating direct left recursion (A → Aα | β → A → βA', A' → αA' | ε)
+ * @brief 文法规范化器 — 左因子提取 + 左递归消除
+ * @details 将文法产生式转换为规范化形式：
+ *          1. 从可选产生式中提取公共左因子
+ *          2. 消除直接左递归（A → Aα | β → A → βA', A' → αA' | ε）
  * @author PL/0 Compiler Project
  * @date 2026-06-11
  */
@@ -16,7 +16,7 @@
 namespace PL0 {
 
 //============================================================================
-// Constructor
+// 构造函数
 //============================================================================
 
 GrammarNormalizer::GrammarNormalizer() : freshCounter_(0) {}
@@ -24,6 +24,7 @@ GrammarNormalizer::GrammarNormalizer() : freshCounter_(0) {}
 //============================================================================
 // 新非终结符名称生成器
 //============================================================================
+// 生成唯一的新非终结符名称，用于左因子提取和左递归消除时创建辅助非终结符
 
 std::string GrammarNormalizer::freshNonTerminal(const std::string& base) {
     freshCounter_++;
@@ -33,6 +34,7 @@ std::string GrammarNormalizer::freshNonTerminal(const std::string& base) {
 //============================================================================
 // 查找公共前缀
 //============================================================================
+// 在多个产生式的右部中查找最长公共前缀，用于左因子提取
 
 std::string GrammarNormalizer::findCommonPrefix(
     const std::vector<std::vector<std::string>>& rhsList,
@@ -82,6 +84,8 @@ bool GrammarNormalizer::startsWith(const std::vector<std::string>& rhs,
 //============================================================================
 // 左因子提取
 //============================================================================
+// 将具有公共前缀的产生式提取为：A → prefix A'，A' → suffix1 | suffix2 | ...
+// 例如：A → abc | abd → A → a A', A' → bc | bd
 
 std::vector<NormProduction> GrammarNormalizer::extractLeftFactor(
     const std::vector<NormProduction>& productions) {
@@ -147,6 +151,8 @@ std::vector<NormProduction> GrammarNormalizer::extractLeftFactor(
 //============================================================================
 // 左递归消除（直接）
 //============================================================================
+// 将直接左递归产生式转换为右递归形式：
+// A → Aα | β → A → βA', A' → αA' | ε
 
 std::vector<NormProduction> GrammarNormalizer::eliminateLeftRecursion(
     const std::vector<NormProduction>& productions) {
@@ -209,6 +215,7 @@ std::vector<NormProduction> GrammarNormalizer::eliminateLeftRecursion(
 //============================================================================
 // 组合规范化
 //============================================================================
+// 先应用左递归消除，然后进行左因子提取，得到规范化的文法
 
 std::vector<NormProduction> GrammarNormalizer::normalize(
     const std::vector<NormProduction>& productions) {
@@ -222,6 +229,7 @@ std::vector<NormProduction> GrammarNormalizer::normalize(
 //============================================================================
 // 打印产生式
 //============================================================================
+// 按左部非终结符分组打印产生式，便于查看规范化结果
 
 void GrammarNormalizer::printProductions(
     std::ostream& os,

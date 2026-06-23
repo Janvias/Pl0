@@ -1,9 +1,8 @@
 /**
  * @file lr1_diagnostics.cpp
- * @brief LR(1) Parser Diagnostics — String Conversion, Output, Validation
- * @details Provides human-readable names for grammar symbols, prints the
- *          LR(1) parse table and canonical collection, and implements the
- *          dual-parser comparison logic for LL(1)/LR(1) cross-validation.
+ * @brief LR(1)解析器诊断模块 — 字符串转换、输出、验证
+ * @details 提供文法符号的可读名称转换，输出LR(1)分析表和规范项目集族，
+ *          并实现LL(1)/LR(1)双分析器对比验证逻辑。
  * @author PL/0 Compiler Project
  * @date 2026-06-09
  */
@@ -17,6 +16,7 @@ namespace PL0 {
 //============================================================================
 // 终结符名称转换
 //============================================================================
+// 将LR1Terminal枚举值转换为可读字符串表示
 
 std::string LR1Parser::terminalToString(LR1Terminal t) const {
     switch (t) {
@@ -58,8 +58,9 @@ std::string LR1Parser::terminalToString(LR1Terminal t) const {
 }
 
 //============================================================================
-// Non-Terminal Name Conversion
+// 非终结符名称转换
 //============================================================================
+// 将LR1NonTerminal枚举值转换为可读字符串表示
 
 std::string LR1Parser::nonTerminalToString(LR1NonTerminal nt) const {
     switch (nt) {
@@ -87,6 +88,7 @@ std::string LR1Parser::nonTerminalToString(LR1NonTerminal nt) const {
 //============================================================================
 // 符号名称转换
 //============================================================================
+// 根据符号类型（终结符/非终结符）调用相应的转换函数
 
 std::string LR1Parser::symbolToString(const LR1Symbol& sym) const {
     if (sym.isTerminal) return terminalToString(sym.terminal);
@@ -96,6 +98,7 @@ std::string LR1Parser::symbolToString(const LR1Symbol& sym) const {
 //============================================================================
 // 产生式字符串表示
 //============================================================================
+// 将产生式转换为可读的字符串形式（如 "P -> B ."）
 
 std::string LR1Parser::productionToString(int prodId) const {
     if (prodId < 0 || prodId >= static_cast<int>(productions_.size()))
@@ -117,6 +120,7 @@ std::string LR1Parser::productionToString(int prodId) const {
 //============================================================================
 // 分析表输出
 //============================================================================
+// 输出LR(1) ACTION表和GOTO表的完整内容，用于调试和验证
 
 void LR1Parser::printParseTable(std::ostream& os) const {
     os << "\n===== LR(1) PARSE TABLE =====\n";
@@ -155,6 +159,7 @@ void LR1Parser::printParseTable(std::ostream& os) const {
 //============================================================================
 // 规范集合输出
 //============================================================================
+// 输出所有LR(1)状态及其项目，包括向前看符号
 
 void LR1Parser::printStates(std::ostream& os) const {
     os << "\n===== LR(1) CANONICAL COLLECTION =====\n";
@@ -179,6 +184,8 @@ void LR1Parser::printStates(std::ostream& os) const {
 //============================================================================
 // 双分析器验证
 //============================================================================
+// 对比LL(1)和LR(1)分析器的解析结果，确保两种方法输出一致
+// 验证内容包括：解析成功/失败状态、四元式数量、四元式操作码
 
 ValidationResult compareParserResults(
     bool ll1Success, const std::string& ll1Error,

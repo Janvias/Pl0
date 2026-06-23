@@ -1,0 +1,38 @@
+const max = 100;
+const min = 1;
+var x, y, z, sum, flag;
+procedure add;
+    var temp;
+    begin
+        temp := x + y;
+        write(temp)
+    end;
+procedure check;
+    begin
+        if flag = 1 then
+            write(x);
+        while flag # 0 do
+            flag := flag - 1
+    end;
+begin
+    x := 10;
+    y := min;
+    read(z);
+    sum := x + y;
+    sum := sum + z;
+    if sum > max then
+        write(sum);
+    if sum <= max then
+        begin
+            flag := 1;
+            call check
+        end;
+    while sum < max do
+    begin
+        sum := sum + 1;
+        write(sum)
+    end;
+    call add;
+    write(x * y);
+    write(z / 2)
+end.

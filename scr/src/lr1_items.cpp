@@ -1,9 +1,8 @@
 /**
  * @file lr1_items.cpp
- * @brief LR(1) Item Closure and Canonical Collection Construction
- * @details Implements the LR(1) closure operation, GOTO function,
- *          canonical LR(1) collection construction, and parse table
- *          generation (ACTION + GOTO tables).
+ * @brief LR(1)项目闭包与规范项目集族构造
+ * @details 实现LR(1)闭包运算、GOTO函数、规范LR(1)项目集族构造，
+ *          以及分析表生成（ACTION表和GOTO表）。
  * @author PL/0 Compiler Project
  * @date 2026-06-09
  */
@@ -21,8 +20,12 @@ std::map<LR1NonTerminal, std::vector<int>> buildProductionIndex(
     const std::vector<LR1Production>& productions);
 
 //============================================================================
-// LR(1) Closure Computation
+// LR(1)闭包计算
 //============================================================================
+// 闭包运算规则：
+// 1. 对于项目[A -> α·Bβ, a]，计算FIRST(βa)作为B的向前看符号集合
+// 2. 对于B的每个产生式B -> γ，将项目[B -> ·γ, b]加入闭包（b∈FIRST(βa)）
+// 3. 重复直到闭包不再扩大
 
 LR1State LR1Parser::computeClosure(const LR1State& items) {
     using T = LR1Terminal;
@@ -81,9 +84,15 @@ LR1State LR1Parser::computeClosure(const LR1State& items) {
 }
 
 //============================================================================
-// Canonical LR(1) Collection Construction
-// Builds all LR(1) states and populates SHIFT/GOTO entries simultaneously
+// 规范LR(1)项目集族构造
 //============================================================================
+// 算法步骤：
+// 1. 初始化：从项目[P' -> ·P, $]的闭包开始
+// 2. 对每个状态，计算对所有文法符号的GOTO
+// 3. 如果GOTO产生新状态，则将其加入项目集族
+// 4. 重复直到没有新状态产生
+// 
+// 同时构建ACTION表（终结符转移）和GOTO表（非终结符转移）
 
 void LR1Parser::buildCanonicalCollection() {
     using T = LR1Terminal;
@@ -161,8 +170,11 @@ void LR1Parser::buildCanonicalCollection() {
 
 //============================================================================
 // 分析表构造（REDUCE + ACCEPT 动作）
-// SHIFT and GOTO entries were populated during canonical collection
 //============================================================================
+// SHIFT和GOTO条目在规范项目集族构造过程中已填充
+// 本函数负责填充REDUCE和ACCEPT动作：
+// - 对于项目[A -> α·, a]，添加REDUCE动作（归约到产生式A -> α）
+// - 对于项目[P' -> P·, $]，添加ACCEPT动作
 
 void LR1Parser::buildParseTables() {
     using T = LR1Terminal;

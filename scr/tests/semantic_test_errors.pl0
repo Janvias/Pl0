@@ -1,0 +1,16 @@
+const c1 = 5;
+var v1, v2;
+procedure p1;
+    var v1;
+    begin
+        v1 := 10;
+        write(v1)
+    end;
+begin
+    v1 := c1;
+    v2 := undef;
+    c1 := 99;
+    call p2;
+    call v1;
+    write(c1)
+end.

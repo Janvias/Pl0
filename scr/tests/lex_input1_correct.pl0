@@ -1,0 +1,22 @@
+const max = 100;
+var x, y, result;
+procedure add;
+    var temp;
+    begin
+        temp := x + y;
+        write(temp)
+    end;
+begin
+    x := 10;
+    y := 20;
+    if x < y then
+        write(1);
+    while x <= max do
+    begin
+        x := x + 1;
+        write(x)
+    end;
+    call add;
+    result := x * y - 5;
+    write(result)
+end.

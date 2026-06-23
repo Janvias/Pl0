@@ -1,0 +1,42 @@
+const a = 10;
+const b = 5;
+var x, y, z, result;
+var outer;
+procedure procA;
+    var inner;
+    begin
+        inner := a;
+        x := inner + b;
+        write(x)
+    end;
+procedure procB;
+    var x;
+    begin
+        x := 99;
+        write(x);
+        x := outer + 1;
+        write(x)
+    end;
+begin
+    outer := 100;
+    x := a + b;
+    y := x * 2;
+    z := y / 3;
+    result := a;
+    write(outer);
+    call procA;
+    call procB;
+    if odd x then
+        write(x);
+    if x > y then
+        write(x);
+    if z <= a then
+        write(z);
+    while x # 0 do
+    begin
+        x := x - 1;
+        write(x)
+    end;
+    write(result);
+    write(a + b - 3)
+end.

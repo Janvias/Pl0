@@ -1,0 +1,20 @@
+const a := 10;
+var b, c d;
+//单行注释
+/*
+ * 多行注释
+ */
+procedure procedure fun1;
+if a <= 10
+begin
+c = b + a
+end;
+begin
+read(b;
+while b # 0
+begin
+call fun1;
+write 2 * c);
+read(b);
+end
+end.

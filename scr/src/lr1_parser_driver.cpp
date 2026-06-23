@@ -1,9 +1,8 @@
 /**
  * @file lr1_parser_driver.cpp
- * @brief LR(1) Parser Driver — Token Mapping, Shift-Reduce Engine, Semantic Actions
- * @details Contains the LR(1) parser constructor (which orchestrates table
- *          construction), the shift-reduce parsing loop, token-to-terminal
- *          mapping, and all semantic actions that generate quadruples.
+ * @brief LR(1)解析器驱动器 — Token映射、移进-归约引擎、语义动作
+ * @details 包含LR(1)解析器构造函数（协调分析表构建）、移进-归约解析循环、
+ *          Token到终结符的映射，以及所有生成四元式的语义动作。
  * @author PL/0 Compiler Project
  * @date 2026-06-09
  */
@@ -18,6 +17,12 @@ namespace PL0 {
 //============================================================================
 // 构造函数 / 析构函数
 //============================================================================
+// 构造函数按顺序执行：
+// 1. 初始化文法（定义46条产生式）
+// 2. 计算FIRST集
+// 3. 计算FOLLOW集
+// 4. 构建规范LR(1)项目集族
+// 5. 构建分析表（ACTION和GOTO）
 
 LR1Parser::LR1Parser()
     : hasError_(false), tokens_(nullptr), tokenPos_(0) {
@@ -33,6 +38,8 @@ LR1Parser::~LR1Parser() {}
 //============================================================================
 // Token到终结符映射
 //============================================================================
+// 将词法分析器生成的Token转换为LR(1)文法的终结符
+// 支持：关键字、标识符、数字、运算符、分隔符、EOF
 
 LR1Terminal LR1Parser::tokenToTerminal(const Token& token) const {
     using T = LR1Terminal;
@@ -85,9 +92,9 @@ LR1Terminal LR1Parser::tokenToTerminal(const Token& token) const {
 
 //============================================================================
 // 语义动作占位符
-// The actual semantic actions are inline in the parse() method's reduce
-// handler. This method exists for documentation and potential external use.
 //============================================================================
+// 实际的语义动作内联在parse()方法的归约处理器中。
+// 此方法仅用于文档说明和潜在的外部调用。
 
 void LR1Parser::executeSemanticAction(int productionId) {
     (void)productionId; // See parse() for actual implementation
@@ -96,6 +103,12 @@ void LR1Parser::executeSemanticAction(int productionId) {
 //============================================================================
 // 解析驱动器 — 移进-归约算法
 //============================================================================
+// LR(1)移进-归约解析的主循环：
+// 1. 根据当前状态和向前看符号查找ACTION表
+// 2. SHIFT：将终结符压栈，进入下一状态
+// 3. REDUCE：根据产生式归约，执行语义动作，通过GOTO表转移状态
+// 4. ACCEPT：解析成功完成
+// 5. ERROR：语法错误
 
 bool LR1Parser::parse(const std::vector<Token>& tokens) {
     using T = LR1Terminal;
@@ -300,41 +313,42 @@ bool LR1Parser::parse(const std::vector<Token>& tokens) {
                     break;
 
                 // ---- Conditions ----
-                case 26: // CO -> odd E
+                case 26: { // CO -> odd E
+                    std::string operand = rhsValues[1].tempName.empty()
+                                          ? rhsValues[1].value
+                                          : rhsValues[1].tempName;
                     quadruples_.push_back(Quadruple(
-                        OpCode::ODD, "", "", "",
+                        OpCode::ODD, operand, "", "",
                         static_cast<int>(quadruples_.size()) + 100));
                     break;
+                }
                 case 27: // CO -> E = E
-                    quadruples_.push_back(Quadruple(
-                        OpCode::EQ, "", "", "",
-                        static_cast<int>(quadruples_.size()) + 100));
-                    break;
                 case 28: // CO -> E # E
-                    quadruples_.push_back(Quadruple(
-                        OpCode::NEQ, "", "", "",
-                        static_cast<int>(quadruples_.size()) + 100));
-                    break;
                 case 29: // CO -> E < E
-                    quadruples_.push_back(Quadruple(
-                        OpCode::LT, "", "", "",
-                        static_cast<int>(quadruples_.size()) + 100));
-                    break;
                 case 30: // CO -> E <= E
-                    quadruples_.push_back(Quadruple(
-                        OpCode::LTE, "", "", "",
-                        static_cast<int>(quadruples_.size()) + 100));
-                    break;
                 case 31: // CO -> E > E
+                case 32: { // CO -> E >= E
+                    // 左操作数来自rhsValues[0]（左E），右操作数来自rhsValues[2]（右E）
+                    std::string leftOp = rhsValues[0].tempName.empty()
+                                        ? rhsValues[0].value
+                                        : rhsValues[0].tempName;
+                    std::string rightOp = rhsValues[2].tempName.empty()
+                                          ? rhsValues[2].value
+                                          : rhsValues[2].tempName;
+                    OpCode op;
+                    switch (prodId) {
+                        case 27: op = OpCode::EQ;  break;
+                        case 28: op = OpCode::NEQ; break;
+                        case 29: op = OpCode::LT;  break;
+                        case 30: op = OpCode::LTE; break;
+                        case 31: op = OpCode::GT;  break;
+                        default: op = OpCode::GTE; break;
+                    }
                     quadruples_.push_back(Quadruple(
-                        OpCode::GT, "", "", "",
+                        op, leftOp, rightOp, "",
                         static_cast<int>(quadruples_.size()) + 100));
                     break;
-                case 32: // CO -> E >= E
-                    quadruples_.push_back(Quadruple(
-                        OpCode::GTE, "", "", "",
-                        static_cast<int>(quadruples_.size()) + 100));
-                    break;
+                }
 
                 // ---- Expressions (right-recursive: need left operand from stack) ----
                 case 33: // E -> + T ET (unary plus — pass through)

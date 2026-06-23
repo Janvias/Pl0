@@ -14,13 +14,13 @@ INC_DIR = ../include
 
 # Files requiring -O0 to avoid MinGW segfault
 O0_SRCS = $(SRC_DIR)/lexer.cpp $(SRC_DIR)/compiler.cpp $(SRC_DIR)/visualizer.cpp \
-          $(DFA_DIR)/nfa.cpp $(DFA_DIR)/dfa.cpp $(DFA_DIR)/regex_parser.cpp
+          $(DFA_DIR)/nfa.cpp $(DFA_DIR)/dfa.cpp $(DFA_DIR)/dfa_wrapper.cpp $(DFA_DIR)/regex_parser.cpp
 
 # Files compiled with -O2
 O2_SRCS = $(SRC_DIR)/parser.cpp $(SRC_DIR)/symtable.cpp $(SRC_DIR)/codegen.cpp \
           $(SRC_DIR)/ast_builder.cpp $(SRC_DIR)/error_suggestor.cpp $(SRC_DIR)/grammar_normalizer.cpp \
           $(SRC_DIR)/lr1_grammar.cpp $(SRC_DIR)/lr1_items.cpp $(SRC_DIR)/lr1_parser_driver.cpp $(SRC_DIR)/lr1_diagnostics.cpp \
-          $(DFA_DIR)/regex_access.cpp $(DFA_DIR)/dfa_stubs.cpp
+          $(DFA_DIR)/regex_access.cpp
 
 # Test runner source
 TEST_SRC = run_tests.cpp
@@ -48,6 +48,9 @@ $(DFA_DIR)/nfa.o: $(DFA_DIR)/nfa.cpp
 	$(CXX) $(CXXFLAGS_O0) -c $< -o $@
 
 $(DFA_DIR)/dfa.o: $(DFA_DIR)/dfa.cpp
+	$(CXX) $(CXXFLAGS_O0) -c $< -o $@
+
+$(DFA_DIR)/dfa_wrapper.o: $(DFA_DIR)/dfa_wrapper.cpp
 	$(CXX) $(CXXFLAGS_O0) -c $< -o $@
 
 $(DFA_DIR)/regex_parser.o: $(DFA_DIR)/regex_parser.cpp
